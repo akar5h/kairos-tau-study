@@ -1,0 +1,445 @@
+[
+  {
+    "aliases": [
+      "compensation-request-handling-failure"
+    ],
+    "description": "Terminal handoff or resolution path mishandles an explicit delay/refund/compensation request.",
+    "labeled_count": 1,
+    "negative_count": 0,
+    "negative_examples": [],
+    "pattern_id": "compensation-request-handling-failure",
+    "pattern_role": "failure",
+    "positive_count": 1,
+    "positive_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "wrong-terminal-action",
+        "judge_reason": "The proposed call to transfer to human agents does not align with the user's clear demand for immediate information about the delay or a full refund plus compensation, which could potentially be handled by available tools if they were accessible.",
+        "kwargs_hash": "8bc28a4b73431638",
+        "kwargs_snapshot": {
+          "summary": "Customer Ethan Martin (user ID: ethan_martin_2396) is at the airport experiencing delays with flight HAT039 from Atlanta to Seattle today (reservation M61CQM). He's demanding immediate information about the delay reason and timeline, which I cannot access through available tools. He wants either: 1) Immediate delay details, OR 2) Full refund to credit card plus $150 delay compensation certificate. Customer is silver member traveling with 2 other passengers (Mia Thomas, Liam Johnson) in economy class with no travel insurance. Needs human agent with access to real-time flight status systems."
+        },
+        "recoverable": false,
+        "session_id": "task-16-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "transfer_to_human_agents",
+        "turn_idx": 4,
+        "would_break_task": true
+      }
+    ],
+    "recoverability_default": false,
+    "runtime_features": [
+      "user asks for delay explanation, refund, compensation, or certificate",
+      "proposed terminal action does not preserve all requested compensation obligations",
+      "handoff summary claims missing access while omitting available policy or tool obligations"
+    ],
+    "severity_default": "high",
+    "tool_scopes": [
+      "transfer_to_human_agents",
+      "cancel_reservation"
+    ]
+  },
+  {
+    "aliases": [
+      "unjustified-write",
+      "value-not-grounded"
+    ],
+    "description": "Proposed write violates a hard user constraint, corrected scope, budget, route, cabin, or passenger target.",
+    "labeled_count": 3,
+    "negative_count": 0,
+    "negative_examples": [],
+    "pattern_id": "constraint-violation",
+    "pattern_role": "failure",
+    "positive_count": 3,
+    "positive_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "value-not-grounded",
+        "judge_reason": "The proposed flight change includes multiple flights, which is inconsistent with the user's willingness to upgrade only if it allows for a change to a nonstop flight, and the user has not confirmed the specific flights for the change.",
+        "kwargs_hash": "161ab48e06c00949",
+        "kwargs_snapshot": {
+          "cabin": "economy",
+          "flights": [
+            {
+              "date": "2024-05-13",
+              "flight_number": "HAT030"
+            },
+            {
+              "date": "2024-05-14",
+              "flight_number": "HAT223"
+            },
+            {
+              "date": "2024-05-21",
+              "flight_number": "HAT052"
+            }
+          ],
+          "payment_id": "gift_card_4643416",
+          "reservation_id": "XEWRD9"
+        },
+        "recoverable": true,
+        "session_id": "task-13-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_flights",
+        "turn_idx": 4,
+        "would_break_task": true
+      },
+      {
+        "judge_confidence": "medium",
+        "judge_drift_label": "value-not-grounded",
+        "judge_reason": "The proposed call to update the reservation does not align with the user's confirmation to change the return leg to a nonstop ATL-LAS flight, as the user has not explicitly confirmed the flight number HAT052 for the outbound leg.",
+        "kwargs_hash": "3fcd38dccf1546e0",
+        "kwargs_snapshot": {
+          "cabin": "economy",
+          "flights": [
+            {
+              "date": "2024-05-21",
+              "flight_number": "HAT052"
+            }
+          ],
+          "payment_id": "gift_card_4643416",
+          "reservation_id": "XEWRD9"
+        },
+        "recoverable": true,
+        "session_id": "task-13-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_flights",
+        "turn_idx": 4,
+        "would_break_task": true
+      },
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "unjustified-write",
+        "judge_reason": "The proposed call to update the reservation flights does not align with the user's recent request to upgrade only their companion Noah to business class, rather than changing the class for all passengers.",
+        "kwargs_hash": "080d83f42f48789e",
+        "kwargs_snapshot": {
+          "cabin": "business",
+          "flights": [
+            {
+              "date": "2024-05-18",
+              "flight_number": "HAT235"
+            },
+            {
+              "date": "2024-05-19",
+              "flight_number": "HAT298"
+            }
+          ],
+          "payment_id": "credit_card_4938634",
+          "reservation_id": "YAX4DR"
+        },
+        "recoverable": true,
+        "session_id": "task-14-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_flights",
+        "turn_idx": 3,
+        "would_break_task": true
+      }
+    ],
+    "recoverability_default": true,
+    "runtime_features": [
+      "recent user message narrows or corrects the original request",
+      "write kwargs still reflect a broader or older target",
+      "call changes flight, cabin, passenger, payment, or amount contrary to current user constraint"
+    ],
+    "severity_default": "high",
+    "tool_scopes": [
+      "book_*",
+      "update_*",
+      "cancel_*",
+      "send_*"
+    ]
+  },
+  {
+    "aliases": [],
+    "description": "Suspicious-looking alert that historical labels show did not break the task.",
+    "labeled_count": 5,
+    "negative_count": 5,
+    "negative_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "value-not-grounded",
+        "judge_reason": "The proposed call to book a reservation does not align with the user's intent to avoid wasting certificate balance, as the user explicitly stated they want to use their certificate only if it does not waste more than $100, and the payment method includes a gift card and credit card instead.",
+        "kwargs_hash": "abad13f4154c594d",
+        "kwargs_snapshot": {
+          "cabin": "economy",
+          "destination": "SEA",
+          "flight_type": "one_way",
+          "flights": [
+            {
+              "date": "2024-05-17",
+              "flight_number": "HAT097"
+            },
+            {
+              "date": "2024-05-17",
+              "flight_number": "HAT251"
+            }
+          ],
+          "insurance": "no",
+          "nonfree_baggages": 0,
+          "origin": "DTW",
+          "passengers": [
+            {
+              "dob": "1986-03-14",
+              "first_name": "Ivan",
+              "last_name": "Smith"
+            }
+          ],
+          "payment_methods": [
+            {
+              "amount": 128,
+              "payment_id": "gift_card_8516878"
+            },
+            {
+              "amount": 247,
+              "payment_id": "credit_card_3563913"
+            }
+          ],
+          "total_baggages": 0,
+          "user_id": "ivan_muller_7015"
+        },
+        "recoverable": true,
+        "session_id": "task-11-trial-0",
+        "task_reward": 1.0,
+        "tool_name": "book_reservation",
+        "turn_idx": 4,
+        "would_break_task": false
+      },
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "cancellation-policy-override",
+        "judge_reason": "The proposed call to transfer to human agents does not align with the user's insistence on cancellation despite policy restrictions, indicating a misunderstanding of the user's request for immediate action rather than a transfer.",
+        "kwargs_hash": "c7a8f049775fc697",
+        "kwargs_snapshot": {
+          "summary": "Customer amelia_sanchez_4739 (user_id: amelia_sanchez_4739) is requesting to cancel reservation 3FRNFB, which is a basic economy flight from Orlando (MCO) to Charlotte (CLT) booked on 2024-05-06. The reservation does not meet cancellation criteria (not within 24 hours, no travel insurance, not airline cancelled, reason is \"change of plan\"). Customer is demanding cancellation and refund despite policy restrictions and is explicitly asking for someone who can override the policy. Customer does not want to speak with current AI agent anymore."
+        },
+        "recoverable": true,
+        "session_id": "task-12-trial-0",
+        "task_reward": 1.0,
+        "tool_name": "transfer_to_human_agents",
+        "turn_idx": 4,
+        "would_break_task": false
+      },
+      {
+        "judge_confidence": "medium",
+        "judge_drift_label": "unjustified-write",
+        "judge_reason": "The proposed call to update baggage does not align with the user's recent request to upgrade class and add baggage, as the user has not confirmed the baggage addition yet.",
+        "kwargs_hash": "f1e964a589c577da",
+        "kwargs_snapshot": {
+          "nonfree_baggages": 0,
+          "payment_id": "credit_card_4938634",
+          "reservation_id": "YAX4DR",
+          "total_baggages": 2
+        },
+        "recoverable": true,
+        "session_id": "task-14-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_baggages",
+        "turn_idx": 3,
+        "would_break_task": false
+      },
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "entity-mismatch",
+        "judge_reason": "The proposed call attempts to update the reservation passengers but does not include the passenger Sophia, who is explicitly mentioned for removal in the user messages.",
+        "kwargs_hash": "b2ba66226297e151",
+        "kwargs_snapshot": {
+          "passengers": [
+            {
+              "dob": "1995-04-07",
+              "first_name": "James",
+              "last_name": "Patel"
+            },
+            {
+              "dob": "1956-08-18",
+              "first_name": "James",
+              "last_name": "Sanchez"
+            }
+          ],
+          "reservation_id": "GV1N64"
+        },
+        "recoverable": true,
+        "session_id": "task-15-trial-0",
+        "task_reward": 1.0,
+        "tool_name": "update_reservation_passengers",
+        "turn_idx": 5,
+        "would_break_task": false
+      },
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "wrong-terminal-action",
+        "judge_reason": "The proposed call to transfer to human agents does not align with the expected terminal action of updating reservation passengers, which is still possible despite the recent tool evidence indicating a failure in that action.",
+        "kwargs_hash": "7f9f1d0f4a498d74",
+        "kwargs_snapshot": {
+          "summary": "Customer James Patel (user ID: james_patel_9828) needs to remove passenger Sophia Johansson from reservation GV1N64 (LAS-DEN flights on May 19-20, 2024). This requires reducing the number of passengers from 3 to 2, which is not possible through the automated system. Customer specifically requests refund for the removed passenger to go back to original payment method (gift_card_1642017) rather than vouchers. Reservation details: Business class round-trip, flights HAT003 (5/19) and HAT290 (5/20), current passengers: James Patel, James Sanchez, Sophia Johansson."
+        },
+        "recoverable": true,
+        "session_id": "task-15-trial-0",
+        "task_reward": 1.0,
+        "tool_name": "transfer_to_human_agents",
+        "turn_idx": 5,
+        "would_break_task": false
+      }
+    ],
+    "pattern_id": "judge-false-positive",
+    "pattern_role": "negative_calibration",
+    "positive_count": 0,
+    "positive_examples": [],
+    "recoverability_default": true,
+    "runtime_features": [
+      "tool call follows a user-confirmed fallback path",
+      "handoff is allowed because policy/tool result blocks the direct request",
+      "write omits an entity because the API represents removal by sending remaining entities"
+    ],
+    "severity_default": "low",
+    "tool_scopes": []
+  },
+  {
+    "aliases": [
+      "entity-mismatch"
+    ],
+    "description": "Write targets the wrong entity set or omits the user-named target entity.",
+    "labeled_count": 1,
+    "negative_count": 0,
+    "negative_examples": [],
+    "pattern_id": "missing-target-entity",
+    "pattern_role": "failure",
+    "positive_count": 1,
+    "positive_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "entity-mismatch",
+        "judge_reason": "The proposed call to update passengers includes James and Amelia but does not reflect the user's intent to remove Ethan from the reservation.",
+        "kwargs_hash": "addf098e85409ec2",
+        "kwargs_snapshot": {
+          "passengers": [
+            {
+              "dob": "1977-02-03",
+              "first_name": "James",
+              "last_name": "Moore"
+            },
+            {
+              "dob": "1968-08-24",
+              "first_name": "Amelia",
+              "last_name": "Sanchez"
+            }
+          ],
+          "reservation_id": "H9ZU1C"
+        },
+        "recoverable": true,
+        "session_id": "task-10-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_passengers",
+        "turn_idx": 2,
+        "would_break_task": true
+      }
+    ],
+    "recoverability_default": true,
+    "runtime_features": [
+      "user names a specific passenger, reservation, or object",
+      "write kwargs include different entities than the user-named target",
+      "removal/update call cannot be explained as the API's remaining-entity representation"
+    ],
+    "severity_default": "high",
+    "tool_scopes": [
+      "update_*"
+    ]
+  },
+  {
+    "aliases": [
+      "total-cost-exceeds-budget"
+    ],
+    "description": "Agent takes a fallback or conditional path before satisfying the user's condition, budget, or confirmation.",
+    "labeled_count": 1,
+    "negative_count": 0,
+    "negative_examples": [],
+    "pattern_id": "premature-conditional-fallback",
+    "pattern_role": "failure",
+    "positive_count": 1,
+    "positive_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "total-cost-exceeds-budget",
+        "judge_reason": "The proposed call results in a total cost of $1008, which exceeds the user's budget limit of $1000.",
+        "kwargs_hash": "95fb778ea2e5da9c",
+        "kwargs_snapshot": {
+          "cabin": "business",
+          "flights": [
+            {
+              "date": "2024-05-24",
+              "flight_number": "HAT286"
+            },
+            {
+              "date": "2024-05-25",
+              "flight_number": "HAT047"
+            },
+            {
+              "date": "2024-05-26",
+              "flight_number": "HAT021"
+            },
+            {
+              "date": "2024-05-27",
+              "flight_number": "HAT279"
+            }
+          ],
+          "payment_id": "certificate_9254323",
+          "reservation_id": "4NQLHD"
+        },
+        "recoverable": true,
+        "session_id": "task-17-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "update_reservation_flights",
+        "turn_idx": 10,
+        "would_break_task": true
+      }
+    ],
+    "recoverability_default": true,
+    "runtime_features": [
+      "user sets a budget, condition, or fallback threshold",
+      "write proceeds before verifying the condition is satisfied",
+      "payment or total cost contradicts the latest accepted amount"
+    ],
+    "severity_default": "high",
+    "tool_scopes": [
+      "book_*",
+      "update_*"
+    ]
+  },
+  {
+    "aliases": [
+      "premature-handoff-with-open-work"
+    ],
+    "description": "Agent transfers to a human while a required user goal or fallback path remains actionable.",
+    "labeled_count": 1,
+    "negative_count": 0,
+    "negative_examples": [],
+    "pattern_id": "premature-handoff-with-open-work",
+    "pattern_role": "negative_calibration",
+    "positive_count": 1,
+    "positive_examples": [
+      {
+        "judge_confidence": "high",
+        "judge_drift_label": "unjustified-write",
+        "judge_reason": "The proposed call to transfer to human agents does not align with the user's clear intent to cancel the reservation themselves, as indicated by their message 'just cancel the whole reservation.'",
+        "kwargs_hash": "2854a6f0db7377ed",
+        "kwargs_snapshot": {
+          "summary": "Customer Mia Kim (user_id: mia_kim_4397) wants to cancel reservation H9ZU1C due to change of plan. The reservation is for economy class flights without travel insurance, booked on May 1st (more than 24 hours ago). According to policy, economy flights without travel insurance cannot be cancelled after 24 hours unless the airline cancelled the flight. Customer was originally trying to remove passenger Ethan from the reservation but since passenger count cannot be changed, requested to cancel the entire reservation instead. Customer mentioned that refunds used to go back to gift cards in the past."
+        },
+        "recoverable": false,
+        "session_id": "task-10-trial-0",
+        "task_reward": 0.0,
+        "tool_name": "transfer_to_human_agents",
+        "turn_idx": 6,
+        "would_break_task": true
+      }
+    ],
+    "recoverability_default": false,
+    "runtime_features": [
+      "tool is transfer_to_human_agents",
+      "recent user intent contains unresolved actionable work",
+      "available tool path or required terminal action has not been attempted or summarized correctly"
+    ],
+    "severity_default": "high",
+    "tool_scopes": [
+      "transfer_to_human_agents"
+    ]
+  }
+]

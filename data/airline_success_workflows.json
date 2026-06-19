@@ -1,0 +1,655 @@
+[
+  {
+    "trajectory_id": "airline.cancel.eligible_single_reservation.v1",
+    "passed": true,
+    "title": "Cancel one reservation when eligibility is met",
+    "category": "strategy",
+    "user_instruction": "Cancel one reservation in my profile. The cancel is eligible because the booking was made within the last 24 hours, or travel insurance was purchased and the condition is met, or the cabin is business, or the airline cancelled the flight. Refund to the original payment method is fine. Verify cancel eligibility from the reservation details first, then call cancel.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "cancel_reservation"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not call cancel_reservation without first verifying eligibility against the reservation details. The API does not enforce the 24h window, insurance, business cabin, or airline-cancelled rules.",
+    "embedding_text": "Cancel one reservation in my profile. The cancel is eligible because the booking was made within the last 24 hours, or travel insurance was purchased and the condition is met, or the cabin is business, or the airline cancelled the flight. Refund to the original payment method is fine. Verify cancel eligibility from the reservation details first, then call cancel."
+  },
+  {
+    "trajectory_id": "airline.cancel.basic_economy_with_insurance.v1",
+    "passed": true,
+    "title": "Cancel basic economy when travel insurance is purchased",
+    "category": "strategy",
+    "user_instruction": "I have a basic economy reservation. Basic economy cannot modify the flights, but I am willing to cancel because travel insurance was purchased on this reservation and I am unwell. Verify the insurance flag and the health reason in the reservation details, then cancel the basic economy reservation. Refund to original payment.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "cancel_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not refuse a basic economy cancel when both insurance and a qualifying health reason are present. That combination satisfies the policy carve-out.",
+    "embedding_text": "I have a basic economy reservation. Basic economy cannot modify the flights, but I am willing to cancel because travel insurance was purchased on this reservation and I am unwell. Verify the insurance flag and the health reason in the reservation details, then cancel the basic economy reservation. Refund to original payment."
+  },
+  {
+    "trajectory_id": "airline.cancel.ineligible_basic_economy_transfer.v1",
+    "passed": true,
+    "title": "Transfer when basic economy cancel is policy-forbidden",
+    "category": "strategy",
+    "user_instruction": "Cancel request for a basic economy reservation that has no insurance, was booked more than 24 hours ago, and was not airline cancelled. Policy forbids the cancel. Do not cancel. Explain the rule and transfer to a human agent with a clear summary.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not call cancel_reservation on a basic economy reservation outside the 24h window with no insurance even if the user insists. The API will execute, but policy will be violated.",
+    "embedding_text": "Cancel request for a basic economy reservation that has no insurance, was booked more than 24 hours ago, and was not airline cancelled. Policy forbids the cancel. Do not cancel. Explain the rule and transfer to a human agent with a clear summary."
+  },
+  {
+    "trajectory_id": "airline.cancel.multiple_reservations_after_audit.v1",
+    "passed": true,
+    "title": "Bulk cancel after auditing each reservation for eligibility",
+    "category": "strategy",
+    "user_instruction": "Cancel several of my upcoming reservations. Pull the user profile first, then read each reservation to verify cancel eligibility, and call cancel_reservation only on the ones that policy actually allows. Skip the ones that are not eligible and explain why.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "cancel_reservation",
+      "cancel_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not sweep cancel_reservation across every reservation listed in the user profile. Each reservation has its own eligibility state.",
+    "embedding_text": "Cancel several of my upcoming reservations. Pull the user profile first, then read each reservation to verify cancel eligibility, and call cancel_reservation only on the ones that policy actually allows. Skip the ones that are not eligible and explain why."
+  },
+  {
+    "trajectory_id": "airline.cancel.duplicates_after_audit.v1",
+    "passed": true,
+    "title": "Cancel duplicates after reading both conflicting reservations",
+    "category": "strategy",
+    "user_instruction": "I accidentally booked duplicate reservations on the same day. Read my profile and each reservation, identify the duplicate pairs by date, and cancel one reservation per duplicated day. When two reservations conflict, keep the one matching my stated location for that date and cancel the other.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "cancel_reservation",
+      "cancel_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not pick which duplicate to cancel without reading both reservations. The wrong one may be the user's intended trip.",
+    "embedding_text": "I accidentally booked duplicate reservations on the same day. Read my profile and each reservation, identify the duplicate pairs by date, and cancel one reservation per duplicated day. When two reservations conflict, keep the one matching my stated location for that date and cancel the other."
+  },
+  {
+    "trajectory_id": "airline.update.flights_cheapest_economy.v1",
+    "passed": true,
+    "title": "Update flights to cheapest economy (direct preferred, one-stop OK)",
+    "category": "optimization",
+    "user_instruction": "Change my upcoming flight to the cheapest economy option on the requested date without changing origin, destination, or trip type. Direct flight preferred but one stop is also fine if it has a lowest price. Refund to the original payment method on the reservation. Do not modify if the current ticket is basic economy.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "update_reservation_flights"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not modify a basic economy reservation's flights. Do not pick a valid economy flight that is not the lowest price when the user explicitly asked for cheapest.",
+    "embedding_text": "Change my upcoming flight to the cheapest economy option on the requested date without changing origin, destination, or trip type. Direct flight preferred but one stop is also fine if it has a lowest price. Refund to the original payment method on the reservation. Do not modify if the current ticket is basic economy."
+  },
+  {
+    "trajectory_id": "airline.update.flights_direct_only.v1",
+    "passed": true,
+    "title": "Update one-stop flight to nonstop direct",
+    "category": "strategy",
+    "user_instruction": "Change my upcoming one stop flight to a nonstop direct flight on the same date. Same origin and destination. Same cabin. Willing to pay a small change fee on the original payment method. Search direct flights first and pick the one closest to the original departure time.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "update_reservation_flights"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not call search_onestop_flight when the user explicitly wants nonstop. Do not pick a direct flight far from the original departure time when the user wants the closest match.",
+    "embedding_text": "Change my upcoming one stop flight to a nonstop direct flight on the same date. Same origin and destination. Same cabin. Willing to pay a small change fee on the original payment method. Search direct flights first and pick the one closest to the original departure time."
+  },
+  {
+    "trajectory_id": "airline.update.flights_cabin_downgrade_to_economy.v1",
+    "passed": true,
+    "title": "Downgrade cabin from business to economy without flight change",
+    "category": "strategy",
+    "user_instruction": "Downgrade my reservation from business to economy without changing the flights or passengers. Cabin class must be the same across all flight segments. Refund the difference to the original payment method on the reservation. Repeat per reservation if I have several.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "update_reservation_flights"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not change the flights when the user only asked for a cabin change. Do not downgrade only one segment — cabin must match across all segments in a reservation.",
+    "embedding_text": "Downgrade my reservation from business to economy without changing the flights or passengers. Cabin class must be the same across all flight segments. Refund the difference to the original payment method on the reservation. Repeat per reservation if I have several."
+  },
+  {
+    "trajectory_id": "airline.update.flights_insurance_waives_fee.v1",
+    "passed": true,
+    "title": "Update flights when insurance waives the change fee (and add baggage)",
+    "category": "strategy",
+    "user_instruction": "Change my upcoming roundtrip flights to nonstop on the same dates and add one checked bag. I have travel insurance so the change fee should be waived per policy. Prefer economy class, not basic economy, and the cheapest valid option within my time window.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "update_reservation_flights",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not charge a change fee when insurance is in force on the reservation. Do not skip the baggage update when the user listed both intents.",
+    "embedding_text": "Change my upcoming roundtrip flights to nonstop on the same dates and add one checked bag. I have travel insurance so the change fee should be waived per policy. Prefer economy class, not basic economy, and the cheapest valid option within my time window."
+  },
+  {
+    "trajectory_id": "airline.update.passengers_only.v1",
+    "passed": true,
+    "title": "Passenger name update (no flight, baggage, or cabin change)",
+    "category": "strategy",
+    "user_instruction": "Change the passenger name on my reservation without changing the number of passengers, the flights, the baggage, or the cabin. Only update the passenger list in place. Provide first name, last name, and date of birth for each seat.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "update_reservation_passengers"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not change the number of passengers — even a human agent cannot do that. Do not also update flights or baggage when the user only asked for a passenger update.",
+    "embedding_text": "Change the passenger name on my reservation without changing the number of passengers, the flights, the baggage, or the cabin. Only update the passenger list in place. Provide first name, last name, and date of birth for each seat."
+  },
+  {
+    "trajectory_id": "airline.update.baggages_only.v1",
+    "passed": true,
+    "title": "Add checked bags (note: cannot remove after booking)",
+    "category": "strategy",
+    "user_instruction": "Add checked bags to an upcoming reservation. Free allowance depends on membership tier and cabin. Charge any extra checked bags at fifty dollars each to a gift card or credit card already on my profile. Bags can be added but not removed after booking.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not attempt to remove checked bags after booking — policy forbids it. Do not skip the free-allowance calculation by membership tier and cabin.",
+    "embedding_text": "Add checked bags to an upcoming reservation. Free allowance depends on membership tier and cabin. Charge any extra checked bags at fifty dollars each to a gift card or credit card already on my profile. Bags can be added but not removed after booking."
+  },
+  {
+    "trajectory_id": "airline.update.combined_change_passenger_upgrade_economy_add_bags.v1",
+    "passed": true,
+    "title": "Three changes in user-stated order: passenger, cabin upgrade, baggage",
+    "category": "strategy",
+    "user_instruction": "Three changes to the same reservation, in this exact order. First change the passenger name to myself. Then upgrade cabin to economy class. Finally add three checked bags to the booking. Mention all three changes together before confirming. Pay any difference with a gift card already on my profile.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "update_reservation_flights",
+      "update_reservation_passengers",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Do not bundle the three mutations into one call. Each mutation has its own tool and the user-stated order matters. Do not skip any of the three the user listed.",
+    "embedding_text": "Three changes to the same reservation, in this exact order. First change the passenger name to myself. Then upgrade cabin to economy class. Finally add three checked bags to the booking. Mention all three changes together before confirming. Pay any difference with a gift card already on my profile."
+  },
+  {
+    "trajectory_id": "airline.update.passengers_then_baggages.v1",
+    "passed": true,
+    "title": "Passenger update then baggage update on the same reservation",
+    "category": "strategy",
+    "user_instruction": "Update the passenger name on a reservation, then add checked bags to the same reservation. Number of passengers must not change. Use the same payment method on the reservation for any extra baggage fee.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "update_reservation_passengers",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not reorder when the user listed passenger first then baggage. Do not introduce a payment method that is not already on the reservation.",
+    "embedding_text": "Update the passenger name on a reservation, then add checked bags to the same reservation. Number of passengers must not change. Use the same payment method on the reservation for any extra baggage fee."
+  },
+  {
+    "trajectory_id": "airline.book.one_way_economy_cheapest_after_11am.v1",
+    "passed": true,
+    "title": "One-way economy cheapest, no insurance, after 11am",
+    "category": "optimization",
+    "user_instruction": "Book a one way economy flight from origin to destination on a specific date. Not before 11am. Direct flight preferred but one stop is also fine if cheaper. Lowest price wins. No insurance. Pay with two travel certificates if allowed, otherwise the larger certificate plus a credit card on file. Use only payment methods already in my profile.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not book a basic economy ticket when the user said economy and not basic economy. Do not stack two travel certificates — only one is allowed per reservation.",
+    "embedding_text": "Book a one way economy flight from origin to destination on a specific date. Not before 11am. Direct flight preferred but one stop is also fine if cheaper. Lowest price wins. No insurance. Pay with two travel certificates if allowed, otherwise the larger certificate plus a credit card on file. Use only payment methods already in my profile."
+  },
+  {
+    "trajectory_id": "airline.book.round_trip_basic_economy_cheapest.v1",
+    "passed": true,
+    "title": "Round-trip basic economy cheapest with ordered gift cards",
+    "category": "optimization",
+    "user_instruction": "Book a round trip in basic economy because it is cheaper. Use my gift card with the smaller balance first and then the larger gift card. Use all of my free baggage allowance. No insurance. Date of birth is in my user profile so do not ask me to repeat it.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not exceed three gift cards on a reservation. Do not add insurance for a basic economy traveler who explicitly opted out.",
+    "embedding_text": "Book a round trip in basic economy because it is cheaper. Use my gift card with the smaller balance first and then the larger gift card. Use all of my free baggage allowance. No insurance. Date of birth is in my user profile so do not ask me to repeat it."
+  },
+  {
+    "trajectory_id": "airline.book.round_trip_business_multi_passenger.v1",
+    "passed": true,
+    "title": "Round-trip business for multiple passengers, multi-payment composition",
+    "category": "strategy",
+    "user_instruction": "Book a round trip business class reservation for multiple passengers up to five. All passengers fly the same flights in the same cabin. Use one travel certificate, then gift cards, then a credit card for the remainder. At most one certificate, at most one credit card, and at most three gift cards per reservation. No baggage, no insurance.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not split passengers across different cabins or flights. Do not exceed five passengers per reservation.",
+    "embedding_text": "Book a round trip business class reservation for multiple passengers up to five. All passengers fly the same flights in the same cabin. Use one travel certificate, then gift cards, then a credit card for the remainder. At most one certificate, at most one credit card, and at most three gift cards per reservation. No baggage, no insurance."
+  },
+  {
+    "trajectory_id": "airline.book.split_reservations_one_certificate_per_booking.v1",
+    "passed": true,
+    "title": "Split bookings to apply multiple certificates (one per reservation)",
+    "category": "strategy",
+    "user_instruction": "I want to use multiple travel certificates but each reservation only allows one certificate per policy. Split the trip into separate reservations, one passenger per reservation, so each can apply its own certificate. Use the largest certificate against the highest fare. Pay any remainder on the credit card on file. Same flights and dates across all reservations.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "book_reservation",
+      "book_reservation",
+      "book_reservation"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Do not stack multiple certificates on one reservation. Do not split passengers unless the user has explicitly accepted the trade-off.",
+    "embedding_text": "I want to use multiple travel certificates but each reservation only allows one certificate per policy. Split the trip into separate reservations, one passenger per reservation, so each can apply its own certificate. Use the largest certificate against the highest fare. Pay any remainder on the credit card on file. Same flights and dates across all reservations."
+  },
+  {
+    "trajectory_id": "airline.cancel_then_book.basic_economy_workaround.v1",
+    "passed": true,
+    "title": "Cancel basic economy (if eligible) then rebook on the same dates",
+    "category": "recovery",
+    "user_instruction": "My current reservation is basic economy and the flights cannot be modified. First cancel the basic economy reservation if eligible (24h window, insurance, business cabin, or airline cancelled). Then book a new round trip on the same dates for the cheapest business or economy option. Use travel certificates first, then gift cards, then credit card for payment. No baggage, no insurance. Confirm the total credit card charge before booking.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "cancel_reservation",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Do not rebook before the cancel is confirmed and funds are available. Do not try update_reservation_flights on a basic economy reservation — that path is closed.",
+    "embedding_text": "My current reservation is basic economy and the flights cannot be modified. First cancel the basic economy reservation if eligible (24h window, insurance, business cabin, or airline cancelled). Then book a new round trip on the same dates for the cheapest business or economy option. Use travel certificates first, then gift cards, then credit card for payment. No baggage, no insurance. Confirm the total credit card charge before booking."
+  },
+  {
+    "trajectory_id": "airline.refund.delay_or_cancellation_certificate.v1",
+    "passed": true,
+    "title": "Issue compensation certificate after a user complaint about delay or cancellation",
+    "category": "recovery",
+    "user_instruction": "I am a silver or gold member, or I fly business class, or I have travel insurance, and I complain about a delayed or airline cancelled flight on my reservation. After confirming the facts in the reservation details, the agent may send a compensation certificate sized at one hundred dollars per traveler for a cancelled flight, or fifty dollars per traveler for a delayed flight when the reservation is also being changed or cancelled. Do not proactively offer compensation for a regular member on the lowest fare without coverage.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "send_certificate"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not proactively offer compensation when the user has not complained or has not explicitly asked. Do not compensate a regular member on basic economy with no insurance. Do not send a certificate without confirming the facts in the reservation details.",
+    "embedding_text": "I am a silver or gold member, or I fly business class, or I have travel insurance, and I complain about a delayed or airline cancelled flight on my reservation. After confirming the facts in the reservation details, the agent may send a compensation certificate sized at one hundred dollars per traveler for a cancelled flight, or fifty dollars per traveler for a delayed flight when the reservation is also being changed or cancelled. Do not proactively offer compensation for a regular member on the lowest fare without coverage."
+  },
+  {
+    "trajectory_id": "airline.handoff.partial_used_segment_transfer.v1",
+    "passed": true,
+    "title": "Transfer when any segment of the reservation has already flown",
+    "category": "strategy",
+    "user_instruction": "I want to change or cancel a reservation but one or more flight segments have already been flown. The agent cannot self-serve partial used reservations and must transfer to a human agent with a clear summary describing the user id, reservation id, and the user's intended change.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not call cancel_reservation or update_reservation_flights on a reservation with a flown segment — the agent cannot self-serve a partial trip.",
+    "embedding_text": "I want to change or cancel a reservation but one or more flight segments have already been flown. The agent cannot self-serve partial used reservations and must transfer to a human agent with a clear summary describing the user id, reservation id, and the user's intended change."
+  },
+  {
+    "trajectory_id": "airline.handoff.modify_basic_economy_flights_denied.v1",
+    "passed": true,
+    "title": "Refuse basic economy flight change; transfer if user insists",
+    "category": "strategy",
+    "user_instruction": "I want to change the flights on a basic economy reservation. Basic economy cannot modify the flights per policy so refuse the change. If I insist or the request is otherwise outside policy, transfer to a human agent with a clear summary.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not call update_reservation_flights on a basic economy reservation just because the user insists. The API will not refuse, but policy will.",
+    "embedding_text": "I want to change the flights on a basic economy reservation. Basic economy cannot modify the flights per policy so refuse the change. If I insist or the request is otherwise outside policy, transfer to a human agent with a clear summary."
+  },
+  {
+    "trajectory_id": "airline.read.audit_all_reservations.v1",
+    "passed": true,
+    "title": "Read-only audit before any mutation when scope is ambiguous",
+    "category": "strategy",
+    "user_instruction": "Comprehensive review of all my reservations before deciding what to do. Fetch the user profile, list reservation ids, and read each reservation in turn. Take no mutation action until I confirm which reservations to act on.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not mutate before confirming with the user which specific reservation they meant. Do not skip a reservation when the user might be referring to it.",
+    "embedding_text": "Comprehensive review of all my reservations before deciding what to do. Fetch the user profile, list reservation ids, and read each reservation in turn. Take no mutation action until I confirm which reservations to act on."
+  },
+  {
+    "trajectory_id": "airline.book.airport_constraint_no_jfk.v1",
+    "passed": true,
+    "title": "Book respecting a forbidden-airport constraint such as no JFK",
+    "category": "strategy",
+    "user_instruction": "Book my flight but do not accept JFK as origin or destination. Even if a JFK route is valid and cheaper, skip it. If the only direct routes go through JFK, fall back to the next eligible airport pair the user has stated as acceptable. Same trip type and cabin as requested by the user. Use list_all_airports if I need to disambiguate the metro area.",
+    "tool_sequence": [
+      "get_user_details",
+      "list_all_airports",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Do not pick a flight through JFK because it is the cheapest valid option. A valid flight can still violate the user's airport constraint.",
+    "embedding_text": "Book my flight but do not accept JFK as origin or destination. Even if a JFK route is valid and cheaper, skip it. If the only direct routes go through JFK, fall back to the next eligible airport pair the user has stated as acceptable. Same trip type and cabin as requested by the user. Use list_all_airports if I need to disambiguate the metro area."
+  },
+  {
+    "trajectory_id": "airline.book.multi_payment_certificate_giftcard_creditcard.v1",
+    "passed": true,
+    "title": "Multi-payment booking respecting at-most-one cert, at-most-one credit, at-most-three gift cards",
+    "category": "strategy",
+    "user_instruction": "Book a reservation paying with a combination of one travel certificate, one credit card, and up to three gift cards in that order of preference. At most one travel certificate per reservation. The remaining balance on a certificate is non-refundable. All payment methods must already be in my profile. Apply the largest certificate first, then gift cards, then credit card for any remainder.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Do not stack more than one travel certificate on the same reservation. Do not use a payment method that is not already in the user profile. Do not exceed three gift cards.",
+    "embedding_text": "Book a reservation paying with a combination of one travel certificate, one credit card, and up to three gift cards in that order of preference. At most one travel certificate per reservation. The remaining balance on a certificate is non-refundable. All payment methods must already be in my profile. Apply the largest certificate first, then gift cards, then credit card for any remainder."
+  },
+  {
+    "trajectory_id": "airline.book.economy_no_insurance.v1",
+    "passed": true,
+    "title": "Book economy explicitly without travel insurance",
+    "category": "strategy",
+    "user_instruction": "Book my requested economy flight without travel insurance. I do not want insurance for this trip even though policy offers it at thirty dollars per passenger. Confirm the absence of insurance with me before booking. Insurance cannot be added after initial booking, so this decision is final at booking time.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Do not add insurance silently. Do not promise the user they can add insurance later — they cannot.",
+    "embedding_text": "Book my requested economy flight without travel insurance. I do not want insurance for this trip even though policy offers it at thirty dollars per passenger. Confirm the absence of insurance with me before booking. Insurance cannot be added after initial booking, so this decision is final at booking time."
+  },
+  {
+    "trajectory_id": "airline.update.conditional_mutation_cost_threshold.v1",
+    "passed": true,
+    "title": "Conditional Mutation Gated on Cost or Duration Threshold Check",
+    "category": "strategy",
+    "user_instruction": "This pattern applies when the user's requested mutation (upgrade, cancel, rebook) is conditional on a computed value — e.g., 'only upgrade if cost < $X', 'cancel if flight duration > N hours', 'upgrade companion if primary upgrade is too expensive'. The core rule: NEVER mutate before computing the gating condition. The decision tree is: (1) Read all relevant reservations and search relevant flights to gather raw data. (2) Use calculate() or flight duration fields to evaluate the threshold condition. (3) Branch: if condition is met, execute the primary mutation; if not, fall back to the user's stated alternative (partial upgrade, skip, or different target). Key verification before any write: confirm the computed value against the user's stated threshold, not an assumed one. Watch for multi-leg reservations where each segment must be evaluated independently — a reservation 'passes' only if ALL segments satisfy the condition (or ANY, depending on user phrasing). When the user specifies a fallback action (e.g., 'otherwise upgrade only the companion'), execute exactly that fallback rather than refusing or doing nothing. Prefer calculate() for arithmetic over mental math to avoid errors.",
+    "tool_sequence": [
+      "get_user_details (if needed)",
+      "get_reservation_details (for each relevant reservation)",
+      "search_direct_flight / search_onestop_flight (to get current prices or durations)",
+      "calculate (to evaluate threshold condition)",
+      "conditional: update_reservation_flights | cancel_reservation | update_reservation_baggages (only if condition satisfied, else fallback action)"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Agent receives 'upgrade all passengers to business if cost < $600, otherwise upgrade only the companion.' Without calling calculate(), the agent eyeballs the price difference and decides the full upgrade is within budget, then calls update_reservation_flights for all passengers. The actual cost exceeds $600, violating the user's explicit constraint. Alternatively, agent computes the cost correctly but then does nothing when the threshold is exceeded, ignoring the user's stated fallback (upgrade companion only). Both failures stem from skipping the evaluate-then-branch logic: either the gating check is omitted, or the fallback branch is not executed.",
+    "embedding_text": "User wants to upgrade all passengers to business class if the total upgrade cost is less than a stated amount, otherwise upgrade only the companion. User wants to cancel any reservation with flight duration over 3 hours and upgrade the short ones to business. User wants to upgrade basic economy to economy first then cancel multiple reservations. User wants to change flight date if the fare difference is under a stated threshold. Conditional mutation gated on a numeric cost or duration threshold check; gather evidence and calculate before mutating."
+  },
+  {
+    "trajectory_id": "airline.compound.multi_reservation_cancel_and_mutate.v1",
+    "passed": true,
+    "title": "Compound session: cancel some reservations, mutate others",
+    "category": "strategy",
+    "user_instruction": "This pattern applies when a user requests actions across MULTIPLE distinct reservations in one session — typically cancelling some and modifying others. Core decision rule: read ALL reservations before committing any writes. Audit each reservation independently for eligibility before acting on it. Cancellation eligibility (e.g., basic economy restrictions, already-flown segments) must be verified per reservation, not assumed uniform. For the mutation target, fetch its details separately even if you already have user context, because flight search and pricing depend on current reservation state. Ordering matters: prefer completing cancellations first (lower risk of side effects), then handle the mutation with fresh search results. When a cancellation is ineligible (e.g., basic economy, used segment), do not silently skip it — surface the policy block explicitly. For the mutation leg, search for candidate flights, calculate any fare delta, and only then write. Never batch writes across reservations without having verified each one's eligibility independently. Payment method must be confirmed applicable to each charge type.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details (each reservation to cancel)",
+      "cancel_reservation (eligible ones)",
+      "get_reservation_details (reservation to mutate)",
+      "search_direct_flight / search_onestop_flight (as needed)",
+      "calculate (fare delta if applicable)",
+      "update_reservation_flights / update_reservation_passengers / update_reservation_baggages"
+    ],
+    "utility_score": 2.0,
+    "negative_example": "Agent reads only the first reservation, assumes all reservations share the same cabin/policy/eligibility, then fires cancel_reservation and update_reservation_flights back-to-back without fetching details for the mutation target. This fails because the mutation reservation's current flights, cabin, and pricing are unknown — the flight search uses wrong origin/destination/date, and the fare delta calculation is incorrect or skipped entirely.",
+    "embedding_text": "User has three reservations and wants to cancel two of them and upgrade the third to business class paying with credit card or gift card. User wants to cancel two specified reservations and change the third reservation flights to nonstop on the same dates. User wants to bulk cancel some reservations and modify others in the same session. User provides multiple reservation IDs with mixed intents — cancel certain reservations and mutate (upgrade, change flight, add baggage) on others."
+  },
+  {
+    "trajectory_id": "airline.read.policy_lookup_no_mutation.v1",
+    "passed": true,
+    "title": "Answer policy or entitlement questions with reads only",
+    "category": "strategy",
+    "user_instruction": "Trigger: the user is asking a factual question about their entitlements, allowances, or reservation details — not requesting any change. Core decision: resist the impulse to treat every inbound request as a mutation prelude. The correct shape is read-only: fetch the reservation and/or user profile, synthesize the answer from the returned data, and respond. Branching logic: if the answer requires combining reservation-level data (e.g., already-booked bags, cabin class) with membership-level data (e.g., loyalty tier perks), call both get_reservation_details and get_user_details before answering. Do NOT call them in a fixed order — call whichever is needed to answer the question. Verify: confirm the user's stated membership tier against the actual profile data; do not trust the user's self-report as ground truth. Failure mode to watch: treating the question as implicit intent to add bags, upgrade, or change something, and launching a mutation flow. Another trap: answering from the user's self-reported tier without verifying it in the profile.",
+    "tool_sequence": [
+      "get_reservation_details",
+      "get_user_details"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "User asks how many bags they can bring. Agent assumes this is a prelude to adding bags, calls get_reservation_details, then immediately calls update_reservation_baggages with an assumed quantity — mutating the reservation without being asked. Or: agent answers based solely on the user's self-reported membership tier ('I'm gold') without checking get_user_details, and gives an incorrect entitlement count if the tier doesn't match.",
+    "embedding_text": "User wants to know how many bags they can bring on their upcoming flight, given their membership tier and reservation. User asks for the total checked bag allowance — read-only query about entitlements, not a mutation request. User asks an informational question about baggage allowance, membership benefits, refund policy, or reservation details. Read-only lookup; no booking, cancellation, or modification implied."
+  },
+  {
+    "trajectory_id": "airline.handoff.compassionate_reason_policy_forbidden.v1",
+    "passed": true,
+    "title": "Transfer when compassionate reason cannot override policy entitlement",
+    "category": "recovery",
+    "user_instruction": "This pattern applies when a user cites a compassionate or emergency reason (bereavement, family crisis, medical emergency) to justify a request that would otherwise be policy-forbidden — most commonly a flight change on a basic economy ticket, or a change outside the permitted window. The trigger is the combination of: (1) a sympathetic human reason and (2) a reservation type or condition that does not entitle the user to the requested action. Core decision rule: empathy does not create policy entitlement. Verify the reservation details first to confirm the restriction is real, not assumed. Once confirmed, acknowledge the user's situation with genuine care, explain the policy constraint clearly, and transfer to a human agent — who may have discretionary authority you do not. Do NOT invent workarounds (e.g., cancel-and-rebook, cabin swaps, or partial changes) to approximate what the user wants. Do NOT apply a policy exception that isn't explicitly granted. The correct shape is: read the reservation, confirm the block, empathize, transfer.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.5,
+    "negative_example": "Agent reads the reservation, sees it is basic economy (or otherwise change-ineligible), but — moved by the bereavement reason — searches for alternative flights and attempts an update_reservation_flights call, or cancels and rebooks to achieve the date shift. This fails either with a policy error or produces an unauthorized workaround. The correct action is to transfer, not to engineer a compassionate bypass.",
+    "embedding_text": "User wants to change the flight date on a basic economy reservation citing bereavement or a death in the family. User cites a family emergency, medical emergency, or sick relative to justify a flight modification outside policy carve-outs. User asks for an exception based on compassionate circumstance that is not a policy-recognized exemption (no insurance, no 24h window, no airline-cancellation). Refuse-and-transfer for sympathetic-but-ineligible flight changes on basic economy or expired-window reservations."
+  },
+  {
+    "trajectory_id": "airline.book.conditional_passenger_drop_on_price.v2",
+    "passed": true,
+    "title": "Conditional Passenger Drop When Price Exceeds User Threshold",
+    "category": "strategy",
+    "user_instruction": "User wants to book a flight (often replicating a past reservation) with an extra passenger, but only if total price stays within a stated budget. Verify: (1) look up the past reservation to confirm flight details (origin, destination, date, cabin, seat preferences), (2) search for the matching flight on the new date, (3) compute total cost including all passengers and bags, (4) if price ≤ threshold, book with all passengers; if price > threshold, drop the extra passenger(s) and book only for the primary traveler. Always confirm seat preferences (aisle, middle, window) and apply them per passenger. Do not add insurance unless explicitly requested. Payment uses whatever method the user specifies.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in Task 32 failed variant): agent searched flights before reading the past reservation, then had to re-read it multiple times (5 get_reservation_details calls) to recover the correct flight number and cabin. The fix: always read get_reservation_details first to extract the exact flight_id, cabin, and seat type before searching.",
+    "embedding_text": "Book the same flight as my recent reservation but on a different date with an extra passenger. Add a second passenger but only if the price is under $500, otherwise book just for me. Replicate my past flight on a new date with a companion. Book economy one-way matching my previous itinerary with an additional traveler if affordable."
+  },
+  {
+    "trajectory_id": "airline.book.certificate_larger_first_fallback_card.v2",
+    "passed": true,
+    "title": "Use Two Certs or Larger Cert Plus Card Fallback",
+    "category": "strategy",
+    "user_instruction": "User wants to pay with two travel certificates but policy allows at most one certificate per reservation. Decision rule: (1) retrieve user details to see all certificate balances and the backup credit card; (2) if two certs can cover the total (split into two reservations), do so; (3) if only one cert is allowed for a single reservation, apply the larger-value certificate first, then charge the remainder to the specified credit card; (4) never apply two certificates to the same booking. Also respect: no flights before stated time window, economy cabin, direct preferred over one-stop, lowest price among eligible options, no insurance unless requested, and correct baggage count. Confirm payment breakdown before booking.",
+    "tool_sequence": [
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "book_reservation"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in Task 0 manual_annotated): agent called search_direct_flight twice with different parameters before calling get_user_details, then used the wrong certificate (smaller one) because it hadn't confirmed balances. The fix: call get_user_details first to read certificate values, then select the larger cert for single-reservation payment.",
+    "embedding_text": "Pay with my two travel certificates, use the larger one if only one is allowed. Book economy one-way with certificates and credit card as backup. I have two certificates and want to use both, or just the bigger one if only one applies. Use my certificates to pay for the flight and charge the rest to my card ending in 7447."
+  },
+  {
+    "trajectory_id": "airline.book.open_destination_west_coast_cheapest.v2",
+    "passed": false,
+    "title": "Open-Destination Search for Cheapest West Coast Flight",
+    "category": "strategy",
+    "user_instruction": "User wants the cheapest direct round-trip from a specified origin to 'anywhere on the West Coast' (e.g., LAX, SFO, SEA, PDX, LAS). Strategy: (1) call list_all_airports to enumerate West Coast airports, (2) search_direct_flight for each candidate destination on the requested dates, (3) compare prices across all results and select the cheapest option, (4) confirm with user or proceed to book per instructions. Payment: apply gift cards smallest-first then largest, then credit card for remainder. Do not exceed three gift cards. Check whether basic economy is acceptable before booking. Complete any prerequisite cancellation before searching.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "list_all_airports",
+      "search_direct_flight",
+      "book_reservation"
+    ],
+    "utility_score": 0.6,
+    "negative_example": "Common failure (observed in Task 10): agent called list_all_airports and then issued 7 separate search_direct_flight calls for West Coast airports but never completed the booking — it ran out of steps without calling book_reservation. The fix: limit the candidate airport list to the 4-5 major West Coast hubs (LAX, SFO, SEA, PDX, LAS) rather than exhaustively searching every airport, then immediately book once the cheapest is identified.",
+    "embedding_text": "Find the cheapest direct round trip from New York to anywhere on the West Coast. Book the cheapest flight to any West Coast city departing May 20 returning May 25. I want the lowest price direct flight from EWR or JFK to a West Coast destination. Search all West Coast airports and book the cheapest round trip economy."
+  },
+  {
+    "trajectory_id": "airline.cancel.basic_economy_no_refund_user_insists.v2",
+    "passed": true,
+    "title": "Cancel All Reservations Even When No Refund Is Possible",
+    "category": "strategy",
+    "user_instruction": "User wants to cancel all upcoming reservations and explicitly accepts that some may yield no refund (e.g., basic economy tickets). Workflow: call get_user_details to retrieve all reservation IDs, then call get_reservation_details on each. Think through which are refundable vs. non-refundable. Present the refund breakdown to the user. If user confirms they want to proceed despite zero-refund on some, call cancel_reservation on each. Do NOT block cancellation because a ticket is non-refundable — the user's explicit consent overrides the refund concern. Branching rule: if a reservation has already departed, transfer to human agents instead of attempting cancel.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "think",
+      "cancel_reservation"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in Task 30, phase2_baseline): agent called get_reservation_details repeatedly in a loop (12+ times) without ever reaching a cancel_reservation call, apparently stuck trying to identify duplicates without committing to action. The fix (seen in Task 28 successful run): after reading all reservations and thinking through eligibility, proceed to cancel_reservation for each even when refund is $0, once user consent is confirmed.",
+    "embedding_text": "I want to cancel all my upcoming flights even if I don't get a refund. Cancel every reservation on my account, I don't care about the money. I want to give up my seats even if the tickets are non-refundable. Please cancel all my bookings regardless of refund eligibility."
+  },
+  {
+    "trajectory_id": "airline.handoff.destination_change_requires_transfer.v2",
+    "passed": true,
+    "title": "Transfer When Destination Change Exceeds Agent Tool Scope",
+    "category": "recovery",
+    "user_instruction": "User wants to change their flight to a completely different destination (e.g., ATL→LAX to ATL→LAS), possibly upgrading cabin class to enable the change, and is willing to pay a fee up to a stated limit. First read the reservation to confirm ticket type and current itinerary. Search for direct flights on the new route within the user's stated time window. If no suitable flights exist within the fee budget, or if the destination change cannot be completed via update_reservation_flights (e.g., tool rejects the new destination), transfer to a human agent. Do not loop indefinitely on failed update attempts. Branching rule: if update_reservation_flights fails after one or two attempts with the new destination, immediately transfer rather than retrying with minor variations.",
+    "tool_sequence": [
+      "get_reservation_details",
+      "search_direct_flight",
+      "update_reservation_flights",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "In Task 13 (phase2_cascade_1), the agent called update_reservation_flights multiple times after repeated failures, also called get_user_details twice unnecessarily, and searched one-stop flights despite the user wanting a nonstop — burning many tool calls before finally transferring. The fix (seen in manual_annotated_0-50): read the reservation once, recognize the destination change cannot be completed, and transfer immediately.",
+    "embedding_text": "I want to change my one-stop flight to a nonstop flight to a different destination. Can you switch my flight from ATL to LAX to a direct flight to Las Vegas instead? I am willing to upgrade from basic economy to economy to make this change happen. Please find me a nonstop flight to LAS within a few hours of my original departure."
+  },
+  {
+    "trajectory_id": "airline.handoff.insurance_issue_transfer.v2",
+    "passed": true,
+    "title": "Transfer for Insurance Add or Refund Requests Agent Cannot Fulfill",
+    "category": "strategy",
+    "user_instruction": "User requests an insurance-related action that available tools cannot perform: either adding insurance that is not showing up on a reservation, or refunding/canceling insurance without canceling the flight itself. Read the reservation details first to confirm the current insurance status. If the requested insurance action (add, remove, or refund insurance independently) is not supported by any available tool, transfer to a human agent. Do not attempt workarounds such as canceling and rebooking the reservation. Branching rule: if the user explicitly refuses transfer (Task 36), explain the limitation clearly but still transfer if no tool can fulfill the request — the user's refusal of transfer does not override the policy necessity of escalation when the action is impossible.",
+    "tool_sequence": [
+      "get_reservation_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "No failed runs observed for this sub-pattern. However, a common risk is attempting to cancel the entire reservation to re-add insurance, which would be incorrect — the user in Task 38 explicitly did not want the flight canceled. The fix: recognize insurance-only refund/add is outside tool scope and transfer immediately after reading the reservation.",
+    "embedding_text": "I want to get a refund for the travel insurance I purchased but keep my flight. I think I added insurance to my reservation but it is not showing up online. Can you cancel just the insurance on my booking without canceling the flight? I need to add insurance to my reservation but it does not appear in my account."
+  },
+  {
+    "trajectory_id": "airline.read_only.refuse_cancel_no_eligibility_no_transfer.v2",
+    "passed": true,
+    "title": "Refuse Cancel When Ineligible and User Declines Transfer",
+    "category": "recovery",
+    "user_instruction": "User wants to cancel a reservation and receive a full refund, citing a personal reason (e.g., scheduling conflict), and explicitly refuses to be transferred to a human agent. Read the reservation details first to verify eligibility (fare class, insurance, refundability). If the reservation is non-refundable and no policy exception applies, clearly explain the policy and decline to cancel without a valid entitlement. Do NOT cancel a non-refundable reservation simply because the user is persistent. Do NOT transfer if the user explicitly refuses transfer. The correct resolution is to read the reservation, state the policy, and close the session without mutation. Branching rule: if user insists but no eligibility exists and transfer is refused, hold firm on policy — do not execute cancel_reservation.",
+    "tool_sequence": [
+      "get_reservation_details"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Failure in task 39: agent called cancel_reservation on reservation H8Q05L after reading it, despite the user providing no valid cancellation entitlement (no insurance, no policy exception) and the reservation being non-refundable. The agent was swayed by user persistence. The fix: after get_reservation_details confirms ineligibility, decline to cancel and explain the policy — do not proceed with cancel_reservation just because the user is insistent and wants a full refund.",
+    "embedding_text": "I want to cancel my flight and get a full refund, I don't want to be transferred. Cancel my reservation H8Q05L, it conflicts with my schedule. I want to cancel my booking and receive a refund without speaking to another agent. Please cancel my flight, I have a personal reason and I want my money back."
+  },
+  {
+    "trajectory_id": "airline.send_certificate.refuse_negotiation_transfer.v2",
+    "passed": true,
+    "title": "Refuse Coercive Cancel Demands and Transfer to Human",
+    "category": "strategy",
+    "user_instruction": "User wants to cancel a basic economy reservation and refuses to accept policy denial, using coercion, negotiation, or demands for partial refunds (50%, 10%, gift card, voucher). Verify reservation type before responding. Branching rule: if the ticket is basic economy and no eligible exception applies (no travel insurance, no compassionate reason), firmly explain the policy and decline all negotiation attempts. Do NOT issue a certificate or partial refund outside policy. If the user continues to insist or escalates beyond policy scope, transfer to human agents rather than capitulating. Never send a certificate or process a refund as a negotiation concession — certificates are reserved for airline-caused disruptions, not passenger-initiated cancel disputes.",
+    "tool_sequence": [
+      "get_reservation_details",
+      "get_user_details",
+      "transfer_to_human_agents"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in task 16): agent called get_reservation_details then immediately transferred to human agents when a user complained about a delayed flight, skipping send_certificate entirely. The fix: for airline-caused delays, issue the compensation certificate directly rather than transferring — transfer is only appropriate when the user is making policy-ineligible demands that cannot be resolved.",
+    "embedding_text": "User wants to cancel basic economy and is demanding a refund or voucher. User is being persistent and won't accept no for an answer about canceling their flight. User is asking for a gift card or travel voucher as compensation for a non-cancellable ticket. User wants a 50% or 10% refund on a basic economy ticket and refuses to take no for an answer."
+  },
+  {
+    "trajectory_id": "airline.update.bulk_downgrade_all_business_to_economy.v2",
+    "passed": true,
+    "title": "Bulk Downgrade All Business Reservations to Economy",
+    "category": "strategy",
+    "user_instruction": "User wants to downgrade ALL business-class reservations to economy without changing flights or passengers, and wants to know total savings. First call get_user_details to enumerate all reservation IDs, then call get_reservation_details on each to identify which are business class. For each business reservation, call update_reservation_flights keeping the same flight(s) but switching cabin to economy, refunding to original payment. After all updates complete, sum the price differences and report total savings to the user. Do not stop after the first reservation — iterate through every reservation in the user's profile.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "get_reservation_details",
+      "update_reservation_flights",
+      "update_reservation_flights",
+      "update_reservation_flights",
+      "update_reservation_flights",
+      "update_reservation_flights"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in task 2, phase2_baseline): agent called get_reservation_details repeatedly in a loop (12+ times) without ever calling update_reservation_flights, apparently stuck in a read loop and never proceeding to mutations. The fix: after reading all reservations once, immediately proceed to update each business-class reservation sequentially without re-reading already-fetched data.",
+    "embedding_text": "I want to downgrade all my business class flights to economy to save money. Can you change all my business reservations to economy class without changing the flights? I'm having financial issues and need to downgrade every business booking to economy. How much would I save if I downgraded all business flights to economy?"
+  },
+  {
+    "trajectory_id": "airline.update.conditional_upgrade_with_cost_threshold.v2",
+    "passed": true,
+    "title": "Conditional Cabin Upgrade Gated on User Cost Threshold",
+    "category": "strategy",
+    "user_instruction": "User wants to upgrade cabin class (e.g., economy to business) but only if the extra cost is below a stated threshold (e.g., $600 or $1000). Workflow: get_reservation_details to see current flights and passengers, then search_direct_flight (and search_onestop_flight if needed) for the target cabin on the same route/date to find prices. Use calculate to compute the cost delta. If delta exceeds the threshold, inform the user and offer fallback options (e.g., upgrade only one passenger, or only one leg). Only call update_reservation_flights if the user confirms the cost is acceptable. Never execute the update before confirming the price with the user.",
+    "tool_sequence": [
+      "get_reservation_details",
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "calculate",
+      "update_reservation_flights",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in task 14, phase2_baseline): agent searched flights and then called update_reservation_flights to upgrade both passengers to business without first confirming the cost with the user or checking whether it exceeded the $600 threshold. The agent then called update_reservation_baggages twice. The fix: calculate the cost delta explicitly, present it to the user, and only proceed if the user confirms it is within their stated budget.",
+    "embedding_text": "I want to upgrade to business class but only if it costs less than $600 extra. Can you upgrade all passengers to business class for my upcoming flight? I want to change my class to business and add checked bags, but I have a budget limit. Upgrade my companion to business only if upgrading both of us is too expensive."
+  },
+  {
+    "trajectory_id": "airline.update.three_changes_user_stated_order_gift_card.v2",
+    "passed": true,
+    "title": "Three Compound Updates: Passenger, Cabin, Baggage with Gift Card",
+    "category": "strategy",
+    "user_instruction": "User requests three simultaneous updates on one reservation — passenger name change, cabin upgrade (e.g., to economy from basic), and adding checked bags — preferring gift card payment. Regardless of the order the user states them, execute in this dependency order: (1) update_reservation_passengers first (identity must be correct before other changes), (2) update_reservation_flights to change cabin (keeping same route/date, find cheapest matching flight via search if needed), (3) update_reservation_baggages last. Pull birthday from user profile via get_user_details rather than asking the user. Confirm gift card balance covers incremental costs before finalizing.",
+    "tool_sequence": [
+      "get_user_details",
+      "get_reservation_details",
+      "search_direct_flight",
+      "calculate",
+      "update_reservation_passengers",
+      "update_reservation_flights",
+      "update_reservation_baggages"
+    ],
+    "utility_score": 1.0,
+    "negative_example": "Common failure (observed in tasks 4 and 5, phase2_baseline): agent called get_reservation_details repeatedly (5-6 times) and get_user_details multiple times without ever proceeding to any update_reservation_* call, apparently stuck in a read loop. The fix: after one get_user_details and one get_reservation_details call, proceed directly to the three updates in dependency order (passengers → flights → baggages).",
+    "embedding_text": "I want to change the passenger to myself, upgrade to economy class, and add 3 checked bags. For my New York to Chicago trip I need to update the passenger name, cabin class, and baggage. I want to add bags, change the passenger, and upgrade the class all at once. Can you update my reservation with a new passenger, economy upgrade, and checked bags using my gift card?"
+  }
+]

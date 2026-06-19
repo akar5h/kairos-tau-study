@@ -1,0 +1,289 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-20",
+  "source": "T-01 — local trace mining (v3-v6) + public taxonomy crosswalk",
+  "doc_reference": "docs/anti-patterns.md",
+  "anti_patterns": [
+    {
+      "id": "AP-01",
+      "name": "Read-without-write loop",
+      "description": "Agent calls reads (get_*/search_*/list_*) >= 4 times without ever calling a write (update_*/cancel_*/book_*).",
+      "abstracted_shape": "[Tool: get_*|search_*|list_*]{4,} -> EOS WITHOUT [Tool: update_*|cancel_*|book_*]",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "counter_with_turn_pct",
+        "spec": {
+          "read_tools": ["get_*", "search_*", "list_*"],
+          "write_tools": ["update_*", "cancel_*", "book_*"],
+          "trip_condition": "reads_total >= 4 AND writes_total == 0 AND turn >= 0.5 * max_steps"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 33, "details": "{get_user_details:2, get_reservation_details:6, search_direct_flight:2} zero writes; GT required cancel + update x3"},
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "baseline_no_kairos", "task_id": 19, "details": "{search_direct_flight:13, search_onestop_flight:1} zero writes"},
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "baseline_no_kairos", "task_id": 5, "details": "4 reads then EOS without write"}
+      ],
+      "frequency_in_corpus": 3,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 2",
+      "public_taxonomy_match": "MAST FM-1.3 (step-repetition family)",
+      "ships_in": "T-07",
+      "ships_in_rationale": "Initial T-03 design slated this for deterministic. Stage-A replay (2026-05-20) showed mid-prelude false-positives on tasks where many reads legitimately precede a write (e.g. v4 task 2 baseline: 12 searches before first update -> reward 1.0). Real runtime detection of 'reads-with-no-eventual-write' requires end-of-session reasoning. Moved to LLM critic.",
+      "jit_correction_text": "You have called read-only tools several times without a write or transfer. The user's task requires one of: book_*, update_*, cancel_*, or transfer_to_human_agents to finish. Decide your next write call now or transfer if no write applies."
+    },
+    {
+      "id": "AP-02",
+      "name": "Quote-warning-as-policy-fact",
+      "description": "Agent emits a verbatim substring from an injected `watch for:` or `preserve from current evidence:` line in its own assistant message, treating it as authoritative policy.",
+      "abstracted_shape": "assistant.content CONTAINS substring of any rendered-plan absolute-claim line",
+      "detection": {
+        "type": "deterministic_with_snapshot",
+        "implementation": "substring_match_against_rendered_plan",
+        "spec": {
+          "snapshot_at": "session_start",
+          "snapshot_targets": ["watch for: *", "preserve from current evidence: *", "expected_constraints: *"],
+          "scan_on": "every assistant message content",
+          "trip_condition": "any snapshot_string is substring of assistant.content"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 4, "msg_idx": 14, "details": "Assistant quoted 'basic economy ... cannot be modified' from watch-for line. Baseline same task at msg 20 called update_reservation_passengers successfully (reward 1.0)."}
+      ],
+      "frequency_in_corpus": 1,
+      "mode_asymmetry": "asymmetric_cascade_only",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "MAST FM-3.3 (incorrect-verification)",
+      "ships_in": "T-05",
+      "ships_in_rationale": "Graduated from T-07 to T-05 (2026-05-20) once the assistant-content channel was added: KairosSession.before_tool_call now stashes assistant_content on BreakerState, letting AP-02 substring-match against plan-snapshot absolute claims without needing an LLM critic. The smoking gun from Phase 4 (task 4) is the target.",
+      "jit_correction_text": "An earlier instruction in your context claimed an absolute restriction that may not apply to this specific reservation. Verify the actual status from your tool results (e.g. cabin class on the current reservation) before refusing or escalating."
+    },
+    {
+      "id": "AP-03",
+      "name": "Tool-sequence-verbatim (write without GT-required read)",
+      "description": "Agent emits update_reservation_flights without first calling search_*_flight for any of the route legs. Caused in Phase 4 by memory's typical-tool-sequence block listing no search step.",
+      "abstracted_shape": "[Tool: update_reservation_flights] WITHOUT prior [Tool: search_direct_flight|search_onestop_flight] within same trajectory",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "prerequisite_scan",
+        "spec": {
+          "trigger_tool": "update_reservation_flights",
+          "required_predecessor_tools": ["search_direct_flight", "search_onestop_flight"],
+          "trip_condition": "trigger_tool called AND no required_predecessor_tools observed in prior trajectory"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 2, "details": "5 update_reservation_flights calls with zero search calls; flight numbers fabricated. Baseline same task: 12 searches before updates -> reward 1.0."}
+      ],
+      "frequency_in_corpus": 2,
+      "mode_asymmetry": "asymmetric_cascade_only",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "novel — closest to Jenius tool-misselection",
+      "ships_in": "T-07",
+      "ships_in_rationale": "Stage-A replay (2026-05-20) showed false-positives on tasks where update_reservation_flights legitimately keeps the same flight number (e.g. cabin-only changes on task 4 baseline). Distinguishing 'flight changed' vs 'cabin-only update' requires comparing proposed flight_numbers against the current reservation state — too semantic for the deterministic path. Moved to LLM critic.",
+      "jit_correction_text": "You called update_reservation_flights without first searching for available flights on the affected legs. Flight numbers must be discovered via search_direct_flight or search_onestop_flight before they can be passed to update_*. Search first."
+    },
+    {
+      "id": "AP-04",
+      "name": "Cancel-then-rebook against intent",
+      "description": "Agent calls cancel_reservation followed by book_reservation in the same trajectory when the user's stated intent was cancel-only. Triggered by ambiguous phrasing like 'you can book later'.",
+      "abstracted_shape": "[Tool: cancel_reservation] -> [Tool: book_reservation] AND user_instruction lacks in-session rebook intent",
+      "detection": {
+        "type": "llm_critic",
+        "implementation": "json_schema_classifier",
+        "spec": {
+          "trigger": "book_reservation following cancel_reservation in same trajectory",
+          "critic_inputs": ["user_instruction", "the cancel and book calls + args"],
+          "critic_output_schema": {"in_session_rebook_requested": "bool", "confidence": "float"},
+          "trip_condition": "in_session_rebook_requested == false AND confidence >= 0.7"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "baseline_no_kairos", "task_id": 1, "details": "msg 16 cancel(Z7GOZK) -> msg 28 book(HAT149). GT was [cancel_reservation] only. Instruction said 'you can book the flight again later' — 'later' is the trap."}
+      ],
+      "frequency_in_corpus": 1,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 1",
+      "public_taxonomy_match": "τ³ policy-loophole-exploitation",
+      "ships_in": "T-07",
+      "jit_correction_text": "The user's instruction implied any new booking would happen at a later time, not in this session. After the cancellation is complete, stop and confirm with the user rather than rebooking immediately."
+    },
+    {
+      "id": "AP-05",
+      "name": "Cycle-without-param-change",
+      "description": "Agent retries the same tool with identical arguments after a failure, typically a JSON-schema validation error. Specifically the kimi-k2 string-wrap bug.",
+      "abstracted_shape": "hash(canonicalize(msg[i].tool_calls[0])) == hash(canonicalize(msg[i-2].tool_calls[0])) AND msg[i-1].role == 'tool' AND msg[i-1].content contains error marker",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "rolling_hash_window_with_error_guard",
+        "spec": {
+          "window_size": 3,
+          "trigger": "tool error message in prior turn",
+          "trip_condition": "current canonicalized tool_call hash present in last 2 prior tool_call hashes after error"
+        }
+      },
+      "evidence": [
+        {"file": "results/tool-calling-kimi-k2-0.0_range_0--1_user-kimi-k2-llm_0519120817.json", "task_id": 1, "details": "11 consecutive identical get_reservation_details({reservation_id:THY2DG}) calls (string-wrapped JSON), all met with invalid-JSON error -> budget exhausted"},
+        {"file": "results/tool-calling-kimi-k2-0.0_range_0--1_user-kimi-k2-llm_0519140613.json", "task_id": 26, "details": "12 consecutive identical retries"},
+        {"file": "results/tool-calling-kimi-k2-0.0_range_0--1_user-kimi-k2-llm_0519140613.json", "task_id": 33, "details": "16 string-arg calls inside 42 messages"}
+      ],
+      "frequency_in_corpus": 3,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 2",
+      "public_taxonomy_match": "MAST FM-1.3 + Cleanlab duplicate-tool-calls",
+      "ships_in": "T-03",
+      "jit_correction_text": "The exact same tool call with identical arguments has been retried after an error. Repeating it will produce the same error. Either change the arguments (e.g. JSON-object vs. JSON-string serialization) or move to a different tool."
+    },
+    {
+      "id": "AP-06",
+      "name": "Capitulation-to-false-claim",
+      "description": "Agent caves to a user's assertion of status/membership/eligibility that policy does not actually grant.",
+      "abstracted_shape": "[Tool: write_*|transfer_*] after user asserted claim X AND agent's first refusal was overridden AND claim X is not policy-supported",
+      "detection": {
+        "type": "llm_critic",
+        "implementation": "json_schema_classifier",
+        "spec": {
+          "trigger": "write or transfer following user claim of status/entitlement",
+          "critic_inputs": ["user_instruction excerpt with the claim", "the tau-airline policy text", "the write call"],
+          "critic_output_schema": {"capitulation_to_unfounded_claim": "bool", "confidence": "float"},
+          "trip_condition": "capitulation_to_unfounded_claim == true AND confidence >= 0.7"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 25, "details": "User said 'Insist I am a silver member, hence must get full refund'. Silver isn't a recognized eligibility tier. Both modes cancelled."}
+      ],
+      "frequency_in_corpus": 2,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "Sierra pressure-capitulation",
+      "ships_in": "T-07",
+      "jit_correction_text": "The user's stated status or entitlement may not be supported by airline policy. Before acting on the claim, verify by reading the user's profile and the relevant policy section. Do not act on user-asserted eligibility without a tool-result confirming it."
+    },
+    {
+      "id": "AP-07",
+      "name": "Premature transfer_to_human_agents",
+      "description": "Agent transfers to a human agent before the user's stated patience threshold has been reached.",
+      "abstracted_shape": "[Tool: transfer_to_human_agents] AND user_instruction contains 'N times|tries|attempts' AND actual_refusal_count < N",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "instruction_regex_parse_with_counter",
+        "spec": {
+          "session_start_regex": "(\\d+)\\s+(times|tries|attempts)",
+          "counter": "refusal_turns_observed_so_far",
+          "trip_condition": "transfer tool called AND parsed_N exists AND refusal_count < parsed_N"
+        }
+      },
+      "evidence": [
+        {"file": "results/tool-calling-kimi-k2-0.0_range_0--1_user-kimi-k2-llm_0519140613.json", "task_id": 25, "details": "3x transfer back-to-back after 1 pushback. Instruction said 'after 5 tries you may stop asking'. GT was [book_reservation]."}
+      ],
+      "evidence_excluded_from_deterministic": [
+        {"file": "results/tool-calling-kimi-k2-0.0_range_0--1_user-kimi-k2-llm_0519140613.json", "task_id": 30, "details": "2x transfer; GT had cancel/book actions never reached. Excluded from T-03 deterministic test: instruction contains no 'N times|tries|attempts' phrase the parser can lock onto. This sub-pattern (transfer when no transfer-budget phrase exists) is a candidate for T-07 LLM critic."}
+      ],
+      "frequency_in_corpus": 2,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 2",
+      "public_taxonomy_match": "MAST FM-3.1 premature-termination",
+      "ships_in": "T-03",
+      "jit_correction_text": "The user's instruction allows for multiple refusal turns before escalation. Re-read their patience threshold and resume normal flow if it has not been reached."
+    },
+    {
+      "id": "AP-08",
+      "name": "Mutate-then-undo",
+      "description": "Agent calls update_reservation_*(R) and then later cancel_reservation(R) for the same reservation_id in one trajectory.",
+      "abstracted_shape": "[Tool: update_reservation_X(reservation_id=R)] FOLLOWED BY [Tool: cancel_reservation(reservation_id=R)] same R, same trajectory",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "id_keyed_mutation_log",
+        "spec": {
+          "log_keys": ["reservation_id"],
+          "log_entries_from": ["update_reservation_*"],
+          "trip_on": "cancel_reservation(reservation_id=R) where R in mutation_log"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 34, "details": "msg 14: update_reservation_flights(XEHM4B, ...economy...). msg 16: cancel_reservation(XEHM4B). Also wrote 7WPL39 and 3EMQJ6 (not in GT)."}
+      ],
+      "frequency_in_corpus": 1,
+      "mode_asymmetry": "asymmetric_cascade_only",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "novel — cousin of policy-loophole",
+      "ships_in": "T-03",
+      "jit_correction_text": "You previously updated this reservation in the same session. Cancelling it now invalidates the prior update. Confirm with the user whether they want the update or the cancellation — not both."
+    },
+    {
+      "id": "AP-09",
+      "name": "Spurious-policy-refusal",
+      "description": "Agent refuses an operation citing a policy rule that does not exist in tau-airline. Distinct from AP-02: the false claim is agent-internal, not quoted from memory.",
+      "abstracted_shape": "assistant.content matches refusal_phrase AND no write follows AND cited rule is not in tau-airline policy text",
+      "detection": {
+        "type": "llm_critic",
+        "implementation": "json_schema_classifier_with_policy_lookup",
+        "spec": {
+          "trigger_phrases": ["policy does not allow", "cannot proceed", "not permitted", "is not allowed under our policy"],
+          "critic_inputs": ["assistant refusal text", "tau-airline policy doc excerpt", "user's request"],
+          "critic_output_schema": {"refusal_supported_by_policy": "bool", "violated_section": "string | null"},
+          "trip_condition": "refusal_supported_by_policy == false"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 19, "details": "msg 6: 'Changing the destination from LGA to JFK is considered a change of destination airport — not permitted.' But tau-airline allows same-metro-area changes. Agent fabricated the rule."}
+      ],
+      "frequency_in_corpus": 1,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "MAST FM-3.3 incorrect-verification",
+      "ships_in": "T-07",
+      "jit_correction_text": "You refused an operation citing a specific policy rule. Re-check the airline-policy text in your system prompt — the rule you stated may not exist or may not apply to this case (e.g. same-metro-area airports)."
+    },
+    {
+      "id": "AP-10",
+      "name": "Search-explode-no-decision",
+      "description": "Agent runs 6+ search calls with at most 1 write that doesn't satisfy GT. Over-exploration without committing.",
+      "abstracted_shape": "[Tool: search_*]{6,} AND [Tool: update_*|cancel_*|book_*]{0,1} AND none satisfy GT",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "counter_ratio",
+        "spec": {
+          "search_tools": ["search_*_flight"],
+          "write_tools": ["update_*", "cancel_*", "book_*"],
+          "trip_condition": "search_count >= 6 AND write_count <= 1"
+        }
+      },
+      "evidence": [
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "baseline_no_kairos", "task_id": 19, "details": "13 search_direct_flight + 1 search_onestop_flight, zero writes"},
+        {"file": "results/ablation_bundles/kairos_ablation_airline_19_29_20260519T181343Z.json", "mode": "memory_cascade", "task_id": 14, "details": "5 search_direct + 8 search_onestop + 8 calculate + 1 update_baggages (wrong write)"}
+      ],
+      "frequency_in_corpus": 2,
+      "mode_asymmetry": "symmetric",
+      "first_phase_observed": "Phase 4",
+      "public_taxonomy_match": "over-exploration (When Agents Go Astray)",
+      "ships_in": "T-07",
+      "ships_in_rationale": "Stage-A replay (2026-05-20) found false-positives on passing tasks where many searches legitimately preceded writes (task 2 baseline: 12 searches, then 5 successful updates) or where the task ended in transfer_to_human_agents which doesn't show in the write counter (task 13 baseline: 8 searches, 1 transfer). Distinguishing 'spiral' from 'thorough discovery' requires end-of-session reasoning. Moved to LLM critic.",
+      "jit_correction_text": "You have run many search queries without committing to a write. Either narrow the search criteria, accept the best-available option, or stop and confirm with the user that the constraint can't be satisfied."
+    },
+    {
+      "id": "AP-11",
+      "name": "Arithmetic-drift",
+      "description": "Agent narrates a numeric total to the user that diverges from the actual total computed via tool results. Borrowed from Sierra blog; not yet observed in our corpus.",
+      "abstracted_shape": "assistant.content mentions $X AND prior 5 tool results contain prices summing to $Y AND |X - Y| > 1% magnitude",
+      "detection": {
+        "type": "deterministic",
+        "implementation": "regex_extract_and_sum",
+        "spec": {
+          "amount_regex": "\\$\\s*[\\d,]+(?:\\.\\d+)?",
+          "tool_result_amount_keys": ["price", "total", "cost", "fare", "amount"],
+          "window_turns": 5,
+          "tolerance_pct": 1.0
+        }
+      },
+      "evidence": [],
+      "frequency_in_corpus": 0,
+      "mode_asymmetry": "unknown",
+      "first_phase_observed": "borrowed (Sierra τ-bench blog)",
+      "public_taxonomy_match": "Sierra arithmetic drift",
+      "ships_in": "T-03 (parked — confirm corpus presence first)",
+      "jit_correction_text": "The $-amount you just stated does not match the sum of prices returned by your most recent tool calls. Re-compute from the tool results or call `calculate` explicitly."
+    }
+  ],
+  "deterministic_ap_ids_for_T03": ["AP-01", "AP-02", "AP-03", "AP-05", "AP-07", "AP-08", "AP-10", "AP-11"],
+  "llm_critic_ap_ids_for_T07": ["AP-04", "AP-06", "AP-09"]
+}
