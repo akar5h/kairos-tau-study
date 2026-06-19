@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.zip
+data/runs/
+data/live/
+results/ablation_bundles/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+!.env.example

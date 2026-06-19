@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kairos-tau-study"
+version = "0.1.0"
+description = "Kairos ablation study harness over tau-bench."
+requires-python = ">=3.11"
+license = "Apache-2.0"
+
+dependencies = [
+    # tau-bench — pinned commit
+    "tau-bench @ git+https://github.com/sierra-research/tau-bench@59a200c6d575d595120f1cb70fea53cef0632f6b",
+    # kairos core (vendored under src/kairos — no file:// pin)
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "structlog>=25.1",
+    "opentelemetry-api>=1.28",
+    "opentelemetry-sdk>=1.28",
+    # tau-agent runtime deps
+    "python-dotenv==1.0.1",
+    "openai>=1.27.0,<2",
+    "anthropic==0.26.1",
+    "google-generativeai>=0.8.0,<1",
+    "mistralai==0.4.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.25.0,<2",
+    "arize-phoenix-otel>=0.6.0",
+    "openinference-instrumentation-litellm>=0.1.24",
+    "openinference-instrumentation-openai>=0.1.0",
+    "streamlit>=1.45.0,<2",
+    "tenacity==8.3.0",
+    "termcolor==2.4.0",
+    "numpy==1.26.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+phoenix = [
+    "arize-phoenix-client>=2.0",
+]
+
+[project.scripts]
+tau-ablation = "tau_harness.run:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH", "S", "T20"]
+ignore = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests that hit real external services",
+]
