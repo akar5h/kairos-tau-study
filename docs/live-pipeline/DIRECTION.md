@@ -184,19 +184,24 @@ kairos's `OpenRouterExpectationClient`. First `True` = predicted first-error;
 same error-propagation as the baseline. (Not a faithful drift-detector replay —
 that needs a live `SessionContext`/`PolicyPack`; this is the same idea, minimal.)
 
-**Measured (gpt-4o-mini, 20 tasks):**
-| signal | precision | recall |
+**Measured (20 tasks), raw / propagated precision · recall:**
+| judge | precision | recall |
 |---|---|---|
-| LLM judge raw | 0.50 | 0.45 |
-| LLM judge propagated | 0.44 | 0.36 |
+| gpt-4o-mini | 0.50 / 0.44 | 0.45 / 0.36 |
+| **claude-sonnet-4.6** | 0.56 / 0.50 | **0.45** / 0.36 |
 | action-diff baseline | 0.55 / 0.60 | 1.00 / 0.82 |
 
-**The weak judge LOSES to the deterministic baseline** — it misses >half the
-failures (recall 0.45) and still false-alarms. Takeaway: a cheap per-write LLM
-judge is *not* a free win; judge capability is the bottleneck. → go to B with a
-**stronger model + 3-class neutral + binary-search**, the next cheap lever being
-simply swapping gpt-4o-mini for claude-sonnet / kimi-k2 (~$1) before any
-redesign.
+**Both LLM judges LOSE to the deterministic baseline, and a 5× stronger model
+barely moved the needle (recall flat at 0.45).** So **model capability is NOT
+the bottleneck — the framing is.** The naive per-write "does this deviate?"
+prompt cannot flag *plausible-but-wrong* actions without knowing the correct
+answer, and structurally can't catch failures where the agent never writes at
+all (e.g. a task that needs a `send_certificate` the agent simply never issues).
+
+This kills the "just use a stronger model" lever and sharpens B: the judge needs
+**grounding** — the expected terminal actions / policy (exactly what kairos's
+*real* drift detector feeds it via `SessionExpectation`, which this minimal
+judge omits). Next move is grounding + 3-class, not a bigger model.
 
 ### B — Focused 3-class step judge (build, if A underperforms)
 - Per step, prompt a judge (kimi-k2 / claude-sonnet via OpenRouter) with task

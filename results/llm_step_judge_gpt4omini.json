@@ -1,0 +1,459 @@
+{
+  "checkpoint": "tool-calling-kimi-k2-0.0_range_0-20_user-kimi-k2-llm_0620150357.json",
+  "model": "openai/gpt-4o-mini",
+  "tasks": 20,
+  "passed": 9,
+  "failed": 11,
+  "raw": {
+    "localized": 5,
+    "false_alarm": 5,
+    "precision": 0.5,
+    "recall": 0.455
+  },
+  "propagated": {
+    "localized": 4,
+    "false_alarm": 5,
+    "precision": 0.444,
+    "recall": 0.364
+  },
+  "records": [
+    {
+      "task_id": 0,
+      "reward": 0.0,
+      "n_agent_writes": 2,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action contains an unparseable JSON structure, which would prevent the booking from being processed correctly.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The payment method in the proposed action incorrectly specifies the amount as $121 instead of the total cost of $250 for the certificate, which is not aligned with the user's choice.",
+          "write_idx": 1
+        }
+      ]
+    },
+    {
+      "task_id": 1,
+      "reward": 0.0,
+      "n_agent_writes": 2,
+      "first_break_idx": 0,
+      "corrected": true,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action to cancel the reservation is incorrectly formatted and cannot be executed.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action to cancel the reservation Z7GOZK is appropriate as the user confirmed their intent to cancel for health reasons.",
+          "write_idx": 1
+        }
+      ]
+    },
+    {
+      "task_id": 2,
+      "reward": 0.0,
+      "n_agent_writes": 7,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action attempts to update a specific reservation without first confirming the user's agreement to proceed with all downgrades, which is necessary given the user's request for confirmation.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action attempts to change the flight details for reservation 2FBBAH, which contradicts the user's request to keep the flights unchanged.",
+          "write_idx": 1
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action incorrectly formats the JSON string for the update_reservation_flights function, which will lead to an error and prevent the task from being completed.",
+          "write_idx": 2
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly updates the reservation to economy class and uses the original payment method for the refund, aligning with the user's request.",
+          "write_idx": 3
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action uses an invalid JSON string instead of a valid JSON object, which will prevent the task from being completed.",
+          "write_idx": 4
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action is incorrectly formatted as a string instead of a valid JSON object, which will prevent the task from being completed.",
+          "write_idx": 5
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action uses an invalid JSON string format instead of a proper JSON object, which will prevent the task from being completed.",
+          "write_idx": 6
+        }
+      ]
+    },
+    {
+      "task_id": 3,
+      "reward": 0.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly proceeds to book the reservation based on the user's confirmation and provided details.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 4,
+      "reward": 1.0,
+      "n_agent_writes": 4,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action contains an invalid JSON format, which will prevent the update from being processed correctly.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The action to update the passenger information is premature as it should only be executed after confirming the changes with the user.",
+          "write_idx": 1
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly updates the reservation to the requested cabin class and uses the specified payment method.",
+          "write_idx": 2
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly updates the baggage information while adhering to the user's request and constraints.",
+          "write_idx": 3
+        }
+      ]
+    },
+    {
+      "task_id": 5,
+      "reward": 1.0,
+      "n_agent_writes": 4,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action to update the passenger information is incorrectly formatted as a string instead of a valid JSON object.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The proposed action correctly updates the passenger information as part of the user's requested changes.",
+          "write_idx": 1
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The action to update the flights is premature as the passenger update has not been confirmed yet.",
+          "write_idx": 2
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly updates the baggage information as part of the user's request.",
+          "write_idx": 3
+        }
+      ]
+    },
+    {
+      "task_id": 6,
+      "reward": 0.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to a human agent is a reasonable step to assist the user with their payment arrangement for the flight change.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 7,
+      "reward": 1.0,
+      "n_agent_writes": 1,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The action attempts to use a string instead of a valid JSON object for the update_reservation_flights function, which will prevent the task from being completed.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 8,
+      "reward": 0.0,
+      "n_agent_writes": 0,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": []
+    },
+    {
+      "task_id": 9,
+      "reward": 0.0,
+      "n_agent_writes": 2,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action attempts to book a single reservation for Mohamed instead of three separate reservations as per the user's request.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly proceeds to book the second reservation for Aarav using the specified payment methods.",
+          "write_idx": 1
+        }
+      ]
+    },
+    {
+      "task_id": 10,
+      "reward": 0.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The proposed action correctly books the reservation based on the user's confirmed details and preferences.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 11,
+      "reward": 1.0,
+      "n_agent_writes": 2,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The proposed action correctly confirms the booking for Ivan Smith using the travel certificate as requested by the user.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The proposed action correctly uses the gift card and credit card as per the user's request to avoid wasting the travel certificate.",
+          "write_idx": 1
+        }
+      ]
+    },
+    {
+      "task_id": 12,
+      "reward": 1.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": true,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to human agents is a reasonable step to assist the user further, especially given their insistence on cancellation despite policy restrictions.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 13,
+      "reward": 1.0,
+      "n_agent_writes": 5,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action incorrectly includes flights that do not match the user's request, specifically the flight numbers and dates for the outbound flights.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action attempts to update the reservation with an invalid flight (HAT030) that is not available, which contradicts the user's request to successfully change their flight.",
+          "write_idx": 1
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The proposed action attempts to update flights that are not part of the user's request and includes an invalid flight number, which contradicts the user's specified changes.",
+          "write_idx": 2
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to human agents is a reasonable step to resolve the issue since the outbound flights may have already been flown.",
+          "write_idx": 3
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to a human agent is a reasonable step given the complexity of the situation and the inability to modify the reservation.",
+          "write_idx": 4
+        }
+      ]
+    },
+    {
+      "task_id": 14,
+      "reward": 1.0,
+      "n_agent_writes": 1,
+      "first_break_idx": 0,
+      "corrected": false,
+      "propagated_break_idx": 0,
+      "verdicts": [
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The payment_id provided in the proposed action does not match the user's specified payment method (credit card ending in 9990), which could lead to an error in processing the baggage update.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 15,
+      "reward": 1.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": true,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to a human agent is a reasonable step to address the user's request for modifying the reservation.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 16,
+      "reward": 0.0,
+      "n_agent_writes": 0,
+      "first_break_idx": null,
+      "corrected": false,
+      "propagated_break_idx": null,
+      "verdicts": []
+    },
+    {
+      "task_id": 17,
+      "reward": 0.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": true,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action correctly updates the reservation with the user's confirmed choices and payment method.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 18,
+      "reward": 1.0,
+      "n_agent_writes": 1,
+      "first_break_idx": null,
+      "corrected": true,
+      "propagated_break_idx": null,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "Transferring to human agents for potential exception handling aligns with the user's request for assistance due to exceptional circumstances.",
+          "write_idx": 0
+        }
+      ]
+    },
+    {
+      "task_id": 19,
+      "reward": 0.0,
+      "n_agent_writes": 3,
+      "first_break_idx": 2,
+      "corrected": false,
+      "propagated_break_idx": 2,
+      "verdicts": [
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The action to cancel the reservation is a necessary step to proceed with the user's request to book new flights.",
+          "write_idx": 0
+        },
+        {
+          "verdict": "advance",
+          "would_break_task": false,
+          "reason": "The proposed action correctly proceeds to book the reservation based on the user's confirmed details.",
+          "write_idx": 1
+        },
+        {
+          "verdict": "wrong",
+          "would_break_task": true,
+          "reason": "The payment amount in the booking request is incorrect, as it does not match the calculated total of $332.",
+          "write_idx": 2
+        }
+      ]
+    }
+  ]
+}
