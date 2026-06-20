@@ -1,0 +1,44 @@
+{
+  "corpus": {
+    "traces": 13,
+    "total_steps": 432
+  },
+  "workflows": [
+    {
+      "workflow": "Airline Flight Modification",
+      "traces": 4,
+      "computable": 4,
+      "passed": 3,
+      "outcome_rate": 0.75,
+      "human_escalation_rate": 0.0,
+      "findings": 0
+    },
+    {
+      "workflow": "Airline Reservation Booking",
+      "traces": 4,
+      "computable": 4,
+      "passed": 4,
+      "outcome_rate": 1.0,
+      "human_escalation_rate": 0.0,
+      "findings": 0
+    },
+    {
+      "workflow": "Airline Reservation Cancellation",
+      "traces": 1,
+      "computable": 1,
+      "passed": 1,
+      "outcome_rate": 1.0,
+      "human_escalation_rate": 0.0,
+      "findings": 0
+    },
+    {
+      "workflow": "Airline Human Escalation",
+      "traces": 2,
+      "computable": 2,
+      "passed": 2,
+      "outcome_rate": 1.0,
+      "human_escalation_rate": 0.0,
+      "findings": 0
+    }
+  ]
+}

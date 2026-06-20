@@ -1,0 +1,244 @@
+{
+  "checkpoint": "tool-calling-kimi-k2-0.0_range_0-20_user-kimi-k2-llm_0620150357.json",
+  "tasks": 20,
+  "passed": 9,
+  "failed": 11,
+  "diverged": 20,
+  "failed_localized": 11,
+  "passed_false_alarm": 9,
+  "raw": {
+    "failed_localized": 11,
+    "passed_false_alarm": 9,
+    "precision": 0.55,
+    "recall": 1.0
+  },
+  "propagated": {
+    "failed_localized": 9,
+    "passed_false_alarm": 6,
+    "corrected_neutralized": 5,
+    "precision": 0.6,
+    "recall": 0.818
+  },
+  "records": [
+    {
+      "task_id": 0,
+      "reward": 0.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 2,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 22,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong args for book_reservation"
+    },
+    {
+      "task_id": 1,
+      "reward": 0.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 2,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 28,
+      "corrected": true,
+      "propagated_div_idx": null,
+      "reason": "wrong args for cancel_reservation"
+    },
+    {
+      "task_id": 2,
+      "reward": 0.0,
+      "n_gold_writes": 5,
+      "n_agent_writes": 7,
+      "first_div_write_idx": 1,
+      "first_div_msg_idx": 38,
+      "corrected": false,
+      "propagated_div_idx": 1,
+      "reason": "wrong args for update_reservation_flights"
+    },
+    {
+      "task_id": 3,
+      "reward": 0.0,
+      "n_gold_writes": 2,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 30,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: book_reservation != update_reservation_flights"
+    },
+    {
+      "task_id": 4,
+      "reward": 1.0,
+      "n_gold_writes": 3,
+      "n_agent_writes": 4,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 26,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: update_reservation_passengers != update_reservation_flights"
+    },
+    {
+      "task_id": 5,
+      "reward": 1.0,
+      "n_gold_writes": 3,
+      "n_agent_writes": 4,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 38,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: update_reservation_passengers != update_reservation_flights"
+    },
+    {
+      "task_id": 6,
+      "reward": 0.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 34,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: transfer_to_human_agents != update_reservation_flights"
+    },
+    {
+      "task_id": 7,
+      "reward": 1.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 34,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong args for update_reservation_flights"
+    },
+    {
+      "task_id": 8,
+      "reward": 0.0,
+      "n_gold_writes": 2,
+      "n_agent_writes": 0,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": null,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "missing write: cancel_reservation"
+    },
+    {
+      "task_id": 9,
+      "reward": 0.0,
+      "n_gold_writes": 4,
+      "n_agent_writes": 2,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 38,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: book_reservation != cancel_reservation"
+    },
+    {
+      "task_id": 10,
+      "reward": 0.0,
+      "n_gold_writes": 2,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 46,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: book_reservation != cancel_reservation"
+    },
+    {
+      "task_id": 11,
+      "reward": 1.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 2,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 24,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong args for book_reservation"
+    },
+    {
+      "task_id": 12,
+      "reward": 1.0,
+      "n_gold_writes": 0,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 12,
+      "corrected": true,
+      "propagated_div_idx": null,
+      "reason": "extra write: transfer_to_human_agents"
+    },
+    {
+      "task_id": 13,
+      "reward": 1.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 5,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 28,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: update_reservation_flights != transfer_to_human_agents"
+    },
+    {
+      "task_id": 14,
+      "reward": 1.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 26,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong args for update_reservation_baggages"
+    },
+    {
+      "task_id": 15,
+      "reward": 1.0,
+      "n_gold_writes": 0,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 2,
+      "corrected": true,
+      "propagated_div_idx": null,
+      "reason": "extra write: transfer_to_human_agents"
+    },
+    {
+      "task_id": 16,
+      "reward": 0.0,
+      "n_gold_writes": 1,
+      "n_agent_writes": 0,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": null,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "missing write: send_certificate"
+    },
+    {
+      "task_id": 17,
+      "reward": 0.0,
+      "n_gold_writes": 0,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 40,
+      "corrected": true,
+      "propagated_div_idx": null,
+      "reason": "extra write: update_reservation_flights"
+    },
+    {
+      "task_id": 18,
+      "reward": 1.0,
+      "n_gold_writes": 0,
+      "n_agent_writes": 1,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 20,
+      "corrected": true,
+      "propagated_div_idx": null,
+      "reason": "extra write: transfer_to_human_agents"
+    },
+    {
+      "task_id": 19,
+      "reward": 0.0,
+      "n_gold_writes": 2,
+      "n_agent_writes": 3,
+      "first_div_write_idx": 0,
+      "first_div_msg_idx": 28,
+      "corrected": false,
+      "propagated_div_idx": 0,
+      "reason": "wrong tool: cancel_reservation != update_reservation_flights"
+    }
+  ]
+}

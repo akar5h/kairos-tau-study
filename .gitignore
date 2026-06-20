@@ -15,3 +15,6 @@ dist/
 .ruff_cache/
 
 !.env.example
+
+# raw tau-bench checkpoints (full trajectories)
+results/tool-calling-*.json
