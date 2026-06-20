@@ -166,6 +166,57 @@ keep detection clean and standalone.)
 
 ---
 
+## 5b. LLM step-judge plan — beating the 0.6 ceiling
+
+Action-diff caps at ~0.6 because it judges *exact match*, not *correctness*. An
+LLM judge reads instruction + state + action and can flag **wrong-but-completed**
+steps (the kairos outcome-layer blind spot) — observation only, no ground truth.
+
+**Key reuse:** kairos-ai already ships an LLM step-judge — the drift detector
+(`kairos.semantic_recovery`) emits a per-step verdict (`consistent`,
+`would_break_task`, `drift_label`) from an LLM. So the first move is *wire +
+benchmark*, not *build*.
+
+### A — LLM step-judge (drift-detector-style) — DONE, NEGATIVE
+`scripts/llm_step_judge.py`. Per agent WRITE action, an LLM is asked
+"does this deviate from completing the task?" (`would_break_task`), reusing
+kairos's `OpenRouterExpectationClient`. First `True` = predicted first-error;
+same error-propagation as the baseline. (Not a faithful drift-detector replay —
+that needs a live `SessionContext`/`PolicyPack`; this is the same idea, minimal.)
+
+**Measured (gpt-4o-mini, 20 tasks):**
+| signal | precision | recall |
+|---|---|---|
+| LLM judge raw | 0.50 | 0.45 |
+| LLM judge propagated | 0.44 | 0.36 |
+| action-diff baseline | 0.55 / 0.60 | 1.00 / 0.82 |
+
+**The weak judge LOSES to the deterministic baseline** — it misses >half the
+failures (recall 0.45) and still false-alarms. Takeaway: a cheap per-write LLM
+judge is *not* a free win; judge capability is the bottleneck. → go to B with a
+**stronger model + 3-class neutral + binary-search**, the next cheap lever being
+simply swapping gpt-4o-mini for claude-sonnet / kimi-k2 (~$1) before any
+redesign.
+
+### B — Focused 3-class step judge (build, if A underperforms)
+- Per step, prompt a judge (kimi-k2 / claude-sonnet via OpenRouter) with task
+  instruction + trajectory-so-far + the step's action → `+1 / 0 / −1`
+  (advance / neutral-exploratory / wrong), structured output.
+- The **neutral class** is the precision lever — it stops exploratory-step
+  over-firing.
+- **Binary-search localization** (~log N judge calls/trace), not judge-every-step.
+
+### C — Ensemble + honest benchmark
+- Combine: action-diff (recall) + thought↔action consistency + LLM judge
+  (precision). Report marginal contribution of each.
+- FirstErrAcc on a widened corpus (50+ tasks) vs the field's 14–45% bar.
+
+**Realistic target: beat 0.6, not solve it** — best LLM judges in the
+literature reach ~65% FirstErrAcc. Calibrate against tau reward as a weak label
+(failed tasks should surface ≥1 uncorrected `−1`; passed tasks ideally none).
+
+---
+
 ## 6. Honest limitations
 
 - tau-bench gives gold *actions*, so we can build `−1` labels semi-cheaply here;

@@ -129,6 +129,18 @@ def first_divergence(task: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _newest_checkpoint() -> Path:
+    """Newest tau-bench airline checkpoint under results/."""
+    hits = sorted(
+        glob.glob(str(REPO_ROOT / "results" / "tool-calling-*range_0-20*.json")),
+        key=os.path.getmtime,
+        reverse=True,
+    )
+    if not hits:
+        raise FileNotFoundError("no tool-calling-*range_0-20*.json in results/")
+    return Path(hits[0])
+
+
 def _load_checkpoint(path: Path) -> list[dict[str, Any]]:
     data = json.loads(path.read_text())
     rows = data if isinstance(data, list) else data.get("results", data)
@@ -191,15 +203,11 @@ def main() -> int:
     if args.checkpoint:
         path = Path(args.checkpoint)
     else:
-        hits = sorted(
-            glob.glob(str(REPO_ROOT / "results" / "tool-calling-*range_0-20*.json")),
-            key=os.path.getmtime,
-            reverse=True,
-        )
-        if not hits:
-            print("no checkpoint found; pass one explicitly", file=sys.stderr)
+        try:
+            path = _newest_checkpoint()
+        except FileNotFoundError as exc:
+            print(exc, file=sys.stderr)
             return 1
-        path = Path(hits[0])
 
     result = analyze(path)
 
