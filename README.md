@@ -95,6 +95,8 @@ To score it, a task is "flagged" if *any* monitored action in its trajectory was
 | A (cleaner read) | 27 | 11 | 16 | 12 | 11 | **0.41** | 0.50 | 0.45 |
 | B | 29 | 14 | 15 | 9 | 12 | 0.48 | 0.54 | 0.51 |
 
+![Detector confusion matrix — N=50, τ-bench airline, judge phi-4-mini: precision 0.41, recall 0.50, 27/50 flagged; 11 true positives, 16 false alarms, 11 missed failures, 12 true negatives](assets/detector-confusion-matrix.png)
+
 Read the A row plainly: it flags 27 of 50 tasks, **16 of those flags are false alarms** (the task actually passed), and it **misses 11 real failures**. Precision 0.41, recall 0.50. As a task-level failure predictor, this is barely better than guessing.
 
 Both arms land in the same place, which is the cross-check you want — detection is the same observe-only signal in both runs, so it *should* agree with itself, and it does. (I treat A as the cleaner read because B's trajectories also contain the 4 injected corrections.)
@@ -167,6 +169,25 @@ KAIROS_TAU_INTERVENTION_ENABLED=1 \
 - [`results/ab_runB_full.json`](results/ab_runB_full.json) — intervention, 50 tasks
 - [`results/ab_summary.json`](results/ab_summary.json) — computed summary
 - [`scripts/ab_measure.py`](scripts/ab_measure.py) — A/B + detection-matrix computation
+
+### Verify the numbers yourself
+
+Every figure in this README is recomputed from the two committed result files — no trust required:
+
+```bash
+python scripts/ab_measure.py --a results/ab_runA_full.json --b results/ab_runB_full.json
+# -> baseline 28/50 (0.560), intervention 24/50 (0.480), helped [0,6,30], hurt [2,4,16,17,20,21,32]
+# -> detection A: precision 0.41 recall 0.50 ; B: 0.48 / 0.54
+```
+
+The detector confusion matrix above is the `--a` (baseline) arm of that output.
+
+---
+
+## Related work
+
+- **[Kairos AI](https://github.com/akar5h/kairos-ai)** — the broader project this study came out of: an agent-tracing SDK + on-demand failure-clustering engine (OpenTelemetry → trace IR → analysis). This τ-bench study is the measurement that turned that work from "intervene at runtime" toward "observe, attribute, and own the outcome."
+- The full benchmark harness (the `tau-openrouter` runner + Kairos host integration referenced in the reproduce block) lives in a separate repo; the result files + `ab_measure.py` here are sufficient to verify every number. Ask if you want harness access.
 
 ---
 
